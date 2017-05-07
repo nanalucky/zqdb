@@ -58,19 +58,35 @@ namespace zqdb
             strClientVer = (string)paramJo[CLIENTVER];
             joBody = (JObject)paramJo[BODY];
 
-            Console.WriteLine("devicetoken:{0}", strDeviceToken);
-            Console.WriteLine("clienttype:{0}", strClientType);
-            //Console.WriteLine("bodystring:{0}", (string)paramJo[BODY]);
-            Console.WriteLine("body:{0}", JsonConvert.SerializeObject(joBody));
+            //Console.WriteLine("devicetoken:{0}", strDeviceToken);
+            //Console.WriteLine("clienttype:{0}", strClientType);
+            //Console.WriteLine("body:{0}", JsonConvert.SerializeObject(joBody));
         }
 
         public string GetParam()
         {
             strTimeStamp = Timestamp();
             //strTimeStamp = @"1492703932428";
-            string md5 = GetMd5();
-            Console.WriteLine(md5);
-            return md5;
+            strSign = GetMd5();
+
+            JObject joParam = new JObject(
+                new JProperty(DEVICETOKEN, strDeviceToken),
+                new JProperty(CLIENTTYPE, strClientType),
+                new JProperty(USERID, strUserId),
+                new JProperty(CLIENTTOKEN, strClientToken),
+                new JProperty(TIMESTAMP, strTimeStamp),
+                new JProperty(USERTOKEN, strUserToken),
+                new JProperty(APIVER, strApiVer),
+                new JProperty(CLIENTVER, strClientVer),
+                new JProperty(SIGN, strSign), 
+                new JProperty(BODY, joBody)
+                );
+
+            string strParam = JsonConvert.SerializeObject(joParam);
+            string strParamUri = Uri.EscapeDataString(strParam);
+            strParamUri = @"params=" + strParamUri;
+            //Console.WriteLine("new param:{0}", strParamUri);
+            return strParamUri;
         }
 
         public static string Timestamp()  
@@ -91,7 +107,6 @@ namespace zqdb
             {
                 // 将得到的字符串使用十六进制类型格式。格式后的字符是小写的字母，如果使用大写（X）则格式后的字符是大写字符
                 pwd = pwd + s[i].ToString("X");
-
             }
             return pwd;
         }
