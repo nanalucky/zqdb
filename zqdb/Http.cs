@@ -8,11 +8,17 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Security.Cryptography;
+using System.Threading; 
 
 namespace zqdb
 {
     public class HttpParam
     {
+        public const string URL = @"http://server.expop.com.cn/api_v2/app/";
+        public static int NOTREADNUM_INTERVAL = 5;
+        public static DateTime dateTimeRun;
+        public static int CONCERTID;
+
         public const string KEY = @"key";
         public const string DEVICETOKEN = @"deviceToken";
         public const string CLIENTTYPE = @"clientType";
@@ -42,6 +48,10 @@ namespace zqdb
         public string strSign = @"";
 
         public JObject joBody;
+
+        public HttpParam()
+        { 
+        }
 
         public HttpParam(string strParam)
         {
@@ -142,7 +152,7 @@ namespace zqdb
                 urlParam += strAnd + USERTOKEN + strEqual + strUserToken;
 
             urlParam += strAnd + KEY + strEqual + strKey;
-            Console.WriteLine("param:{0}", urlParam);
+            //Console.WriteLine("param:{0}", urlParam);
 
             return UserMd5(urlParam);
         }
@@ -150,6 +160,58 @@ namespace zqdb
 
     public class Player
     {
+        HttpParam pmNotReadNum;
+        public static JObject joCityLibraryResult;
+
+        static void SetHttpRequestHeader(DxWinHttp _http)
+        {
+            _http.SetProxy(2, "127.0.0.1:8888", "0");
+            _http.ClearPostData();
+            _http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            _http.SetRequestHeader("Host", "server.expop.com.cn");
+            _http.SetRequestHeader("Connection", "Keep-Alive");
+            _http.SetRequestHeader("Accept-Encoding", "gzip");
+            _http.SetRequestHeader("User-Agent", "okhttp/3.4.1");
+        }
+
+        public static void GetCityLibrary(string strLoginParam)
+        {
+            while (true)
+            {
+                HttpParam pmCityLibrary = new HttpParam(strLoginParam);
+                pmCityLibrary.strUserId = @"";
+                pmCityLibrary.strUserToken = @"";
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", HttpParam.URL + @"address/cityLibrary.action", true);
+                SetHttpRequestHeader(http);
+                http.Send(pmCityLibrary.GetParam());
+
+                bool succeeded = false;
+                http.WaitForResponse(30, out succeeded);
+                if (succeeded)
+                {
+                    joCityLibraryResult = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joCityLibraryResult["code"] == @"0")
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        void SendNotReadNum()
+        {
+            while (true)
+            {
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", HttpParam.URL + @"news/notReadNum.action", true);
+                SetHttpRequestHeader(http);
+                http.Send(pmNotReadNum.GetParam());
+                Thread.Sleep(HttpParam.NOTREADNUM_INTERVAL * 1000);
+            }
+        }
+
+
         public void Run(string strLoginParam)
         {
             //HttpParam param = new HttpParam(strLoginParam);
@@ -157,21 +219,49 @@ namespace zqdb
 
             // login.action
             HttpParam pmLogin = new HttpParam(strLoginParam);
-            DxWinHttp httpLogin = new DxWinHttp();
-            httpLogin.Open("POST", "http://server.expop.com.cn/api_v2/app/account/login.action", true);
-            httpLogin.SetProxy(2, "127.0.0.1:8888", "0");
-            httpLogin.ClearPostData();
-            httpLogin.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            httpLogin.SetRequestHeader("Host", "server.expop.com.cn");
-            httpLogin.SetRequestHeader("Connection", "Keep-Alive");
-            httpLogin.SetRequestHeader("Accept-Encoding", "gzip");
-            httpLogin.SetRequestHeader("User-Agent", "okhttp/3.4.1");
-            httpLogin.Send(pmLogin.GetParam());
+            JObject joLoginReturn = new JObject();
+            while (true)
+            {
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", HttpParam.URL + @"account/login.action", true);
+                SetHttpRequestHeader(http);
+                http.Send(pmLogin.GetParam());
 
-            //httpLogin.WaitForResponse()
+                bool succeeded = false;
+                http.WaitForResponse(30, out succeeded);
+                if (succeeded)
+                {
+                    Console.Write(http.ResponseBody);
+                    joLoginReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joLoginReturn["code"] == @"0")
+                    {
+                        break;
+                    }
+                }
+            }
+            pmLogin.strUserId = (string)joLoginReturn["data"][HttpParam.USERID];
+            pmLogin.strUserToken = (string)joLoginReturn["data"][HttpParam.USERTOKEN];
 
-            string Result = httpLogin.ResponseBody;
-            Console.Write(Result);
+            // notReadNum.action
+            pmNotReadNum = new HttpParam(pmLogin);
+            pmNotReadNum.joBody = new JObject(
+                new JProperty("type", (int)16843169),
+                new JProperty(HttpParam.USERID, pmLogin.strUserId)
+                );
+            Thread threadNotReadNum = new Thread(new ThreadStart(SendNotReadNum));
+            threadNotReadNum.Start();
+
+            // wait start time
+            while ((DateTime.Now < HttpParam.dateTimeRun))
+            {
+                Thread.Sleep(100);
+            }
+            threadNotReadNum.Abort();
+
+            // prices.action
+            
+
+
         }
     };
     

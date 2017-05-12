@@ -28,35 +28,137 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.button1 = new System.Windows.Forms.Button();
+            this.buttonRun = new System.Windows.Forms.Button();
+            this.textBoxFileName = new System.Windows.Forms.TextBox();
+            this.buttonFileName = new System.Windows.Forms.Button();
+            this.dateTimePickerStartTime = new System.Windows.Forms.DateTimePicker();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.textBoxTimer = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.richTextBoxResult = new System.Windows.Forms.RichTextBox();
             this.SuspendLayout();
             // 
-            // button1
+            // buttonRun
             // 
-            this.button1.Location = new System.Drawing.Point(155, 99);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(328, 67);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.buttonRun.Location = new System.Drawing.Point(333, 519);
+            this.buttonRun.Name = "buttonRun";
+            this.buttonRun.Size = new System.Drawing.Size(147, 42);
+            this.buttonRun.TabIndex = 0;
+            this.buttonRun.Text = "运行";
+            this.buttonRun.UseVisualStyleBackColor = true;
+            this.buttonRun.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // textBoxFileName
+            // 
+            this.textBoxFileName.Location = new System.Drawing.Point(218, 50);
+            this.textBoxFileName.Name = "textBoxFileName";
+            this.textBoxFileName.Size = new System.Drawing.Size(525, 28);
+            this.textBoxFileName.TabIndex = 1;
+            this.textBoxFileName.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
+            // 
+            // buttonFileName
+            // 
+            this.buttonFileName.Location = new System.Drawing.Point(46, 41);
+            this.buttonFileName.Name = "buttonFileName";
+            this.buttonFileName.Size = new System.Drawing.Size(147, 42);
+            this.buttonFileName.TabIndex = 2;
+            this.buttonFileName.Text = "参数文件...";
+            this.buttonFileName.UseVisualStyleBackColor = true;
+            this.buttonFileName.Click += new System.EventHandler(this.buttonFileName_Click);
+            // 
+            // dateTimePickerStartTime
+            // 
+            this.dateTimePickerStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time;
+            this.dateTimePickerStartTime.Location = new System.Drawing.Point(218, 116);
+            this.dateTimePickerStartTime.Name = "dateTimePickerStartTime";
+            this.dateTimePickerStartTime.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.dateTimePickerStartTime.Size = new System.Drawing.Size(181, 28);
+            this.dateTimePickerStartTime.TabIndex = 3;
+            // 
+            // label1
+            // 
+            this.label1.BackColor = System.Drawing.SystemColors.Control;
+            this.label1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label1.Location = new System.Drawing.Point(46, 111);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(147, 42);
+            this.label1.TabIndex = 4;
+            this.label1.Text = "开始时间";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // label2
+            // 
+            this.label2.BackColor = System.Drawing.SystemColors.Control;
+            this.label2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label2.Location = new System.Drawing.Point(46, 184);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(147, 42);
+            this.label2.TabIndex = 5;
+            this.label2.Text = "时间间隔";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // textBoxTimer
+            // 
+            this.textBoxTimer.Location = new System.Drawing.Point(218, 193);
+            this.textBoxTimer.Name = "textBoxTimer";
+            this.textBoxTimer.Size = new System.Drawing.Size(57, 28);
+            this.textBoxTimer.TabIndex = 6;
+            this.textBoxTimer.Text = "5";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.BackColor = System.Drawing.SystemColors.Control;
+            this.label3.Location = new System.Drawing.Point(278, 196);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(26, 18);
+            this.label3.TabIndex = 7;
+            this.label3.Text = "秒";
+            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // richTextBoxResult
+            // 
+            this.richTextBoxResult.Location = new System.Drawing.Point(46, 271);
+            this.richTextBoxResult.Name = "richTextBoxResult";
+            this.richTextBoxResult.Size = new System.Drawing.Size(697, 223);
+            this.richTextBoxResult.TabIndex = 9;
+            this.richTextBoxResult.Text = "";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(843, 584);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.richTextBoxResult);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.textBoxTimer);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.dateTimePickerStartTime);
+            this.Controls.Add(this.buttonFileName);
+            this.Controls.Add(this.textBoxFileName);
+            this.Controls.Add(this.buttonRun);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "ZQDB";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonRun;
+        private System.Windows.Forms.TextBox textBoxFileName;
+        private System.Windows.Forms.Button buttonFileName;
+        private System.Windows.Forms.DateTimePicker dateTimePickerStartTime;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox textBoxTimer;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.RichTextBox richTextBoxResult;
     }
 }
 

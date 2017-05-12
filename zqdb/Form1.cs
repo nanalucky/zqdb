@@ -34,5 +34,22 @@ namespace zqdb
 
             Console.Read();
         }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void buttonFileName_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.DefaultExt = ".txt";
+            fileDialog.Filter = "txt files(*.txt)|*.txt";
+            DialogResult result = fileDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                textBoxFileName.Text = fileDialog.FileName;
+            }
+        }
     }
 }
