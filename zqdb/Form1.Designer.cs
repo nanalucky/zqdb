@@ -37,6 +37,10 @@
             this.textBoxTimer = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.richTextBoxResult = new System.Windows.Forms.RichTextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.textBoxConcertId = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.textBoxPrices = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // buttonRun
@@ -125,11 +129,53 @@
             this.richTextBoxResult.TabIndex = 9;
             this.richTextBoxResult.Text = "";
             // 
+            // label4
+            // 
+            this.label4.BackColor = System.Drawing.SystemColors.Control;
+            this.label4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label4.Location = new System.Drawing.Point(487, 111);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(147, 42);
+            this.label4.TabIndex = 10;
+            this.label4.Text = "ConcertId";
+            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // textBoxConcertId
+            // 
+            this.textBoxConcertId.Location = new System.Drawing.Point(654, 120);
+            this.textBoxConcertId.Name = "textBoxConcertId";
+            this.textBoxConcertId.Size = new System.Drawing.Size(57, 28);
+            this.textBoxConcertId.TabIndex = 11;
+            this.textBoxConcertId.Text = "5";
+            // 
+            // label5
+            // 
+            this.label5.BackColor = System.Drawing.SystemColors.Control;
+            this.label5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label5.Location = new System.Drawing.Point(361, 184);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(147, 42);
+            this.label5.TabIndex = 12;
+            this.label5.Text = "Prices";
+            this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // textBoxPrices
+            // 
+            this.textBoxPrices.Location = new System.Drawing.Point(528, 193);
+            this.textBoxPrices.Name = "textBoxPrices";
+            this.textBoxPrices.Size = new System.Drawing.Size(215, 28);
+            this.textBoxPrices.TabIndex = 13;
+            this.textBoxPrices.Text = "1880;1680;1280";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(843, 584);
+            this.Controls.Add(this.textBoxPrices);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.textBoxConcertId);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.richTextBoxResult);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.textBoxTimer);
@@ -159,6 +205,10 @@
         private System.Windows.Forms.TextBox textBoxTimer;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.RichTextBox richTextBoxResult;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.TextBox textBoxConcertId;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.TextBox textBoxPrices;
     }
 }
 
