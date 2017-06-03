@@ -14,11 +14,7 @@ namespace zqdb
 {
     public class HttpParam
     {
-        public const string URL = @"http://server.expop.com.cn/api_v2/app/";
-        public static int NOTREADNUM_INTERVAL = 5;
-        public static DateTime DATETIMERUN;
-        public static int CONCERTID;
-        public static string PRICES;
+        public const string URL = @"https://api.expop.com.cn/v3/app/";
 
         public const string KEY = @"key";
         public const string DEVICETOKEN = @"deviceToken";
@@ -33,8 +29,9 @@ namespace zqdb
         public const string BODY = @"body";
         public const string PHONE = @"phone";
         public const string PASSWORD = @"password";
-        
-        string strKey = @"40389d43-5823-4e4d-be5f-d6e94e45d73f";
+        public const string NONCESTR = @"nonceStr";
+
+        string strKey = @"ae973b8d-64f3-42e4-8f3f-b93d76f5924f";
         string strAnd = @"&";
         string strEqual = @"=";
 
@@ -47,11 +44,29 @@ namespace zqdb
         public string strApiVer = @"";
         public string strClientVer = @"";
         public string strSign = @"";
+        public string strNonceStr = @"";
 
         public JObject joBody;
 
         public HttpParam()
         { 
+        }
+
+        public HttpParam(JObject paramJo)
+        {
+            strDeviceToken = (string)paramJo[DEVICETOKEN];
+            strClientType = (string)paramJo[CLIENTTYPE];
+            strUserId = (string)paramJo[USERID];
+            strClientToken = (string)paramJo[CLIENTTOKEN];
+            strUserToken = (string)paramJo[USERTOKEN];
+            strApiVer = (string)paramJo[APIVER];
+            strClientVer = (string)paramJo[CLIENTVER];
+            strNonceStr = (string)paramJo[NONCESTR];
+            joBody = (JObject)paramJo[BODY];
+
+            //Console.WriteLine("devicetoken:{0}", strDeviceToken);
+            //Console.WriteLine("clienttype:{0}", strClientType);
+            //Console.WriteLine("body:{0}", JsonConvert.SerializeObject(joBody));
         }
 
         public HttpParam(string strParam)
@@ -67,6 +82,7 @@ namespace zqdb
             strUserToken = (string)paramJo[USERTOKEN];
             strApiVer = (string)paramJo[APIVER];
             strClientVer = (string)paramJo[CLIENTVER];
+            strNonceStr = (string)paramJo[NONCESTR];
             joBody = (JObject)paramJo[BODY];
 
             //Console.WriteLine("devicetoken:{0}", strDeviceToken);
@@ -85,15 +101,22 @@ namespace zqdb
                 strUserToken = _param.strUserToken;
             strApiVer = _param.strApiVer;
             strClientVer = _param.strClientVer;
+            strNonceStr = _param.strNonceStr;
             joBody = new JObject();
+        }
+
+        public string GetSign()
+        {
+            //strTimeStamp = @"1496512106741";
+            //UpdateNonceStr(@"214748364773698");
+            strTimeStamp = Timestamp();
+            UpdateNonceStr();
+            strSign = GetMd5();
+            return strSign;
         }
 
         public string GetParam()
         {
-            strTimeStamp = Timestamp();
-            //strTimeStamp = @"1492703932428";
-            strSign = GetMd5();
-
             JObject joParam = new JObject(
                 new JProperty(DEVICETOKEN, strDeviceToken),
                 new JProperty(CLIENTTYPE, strClientType),
@@ -101,6 +124,7 @@ namespace zqdb
                 new JProperty(CLIENTTOKEN, strClientToken),
                 new JProperty(TIMESTAMP, strTimeStamp),
                 new JProperty(USERTOKEN, strUserToken),
+                new JProperty(NONCESTR, strNonceStr),
                 new JProperty(APIVER, strApiVer),
                 new JProperty(CLIENTVER, strClientVer),
                 new JProperty(SIGN, strSign), 
@@ -112,6 +136,30 @@ namespace zqdb
             strParamUri = @"params=" + strParamUri;
             //Console.WriteLine("new param:{0}", strParamUri);
             return strParamUri;
+        }
+
+        public string UpdateNonceStr(string strTest = "")
+        {
+            string strMd5 = strNonceStr.Substring(0, 32);
+            string nonceStr;
+            if (strTest.Length > 0)
+            {
+                nonceStr = string.Format("%s%s", strMd5, strTest);
+            }
+            else 
+            {
+                TimeSpan span = (DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0).ToLocalTime());
+                float fCurTimeMillis = (float)span.TotalMilliseconds * 2.6f;
+                int nCurTimeMillis;
+                if (fCurTimeMillis >= (float)int.MaxValue)
+                    nCurTimeMillis = int.MaxValue;
+                else
+                    nCurTimeMillis = (int)fCurTimeMillis;
+                int nRandom = (new Random()).Next(100000);
+                nonceStr = string.Format("{0}{1}{2}", strMd5, nCurTimeMillis, nRandom);
+            }
+
+            return nonceStr;
         }
 
         public static string Timestamp()  
@@ -144,6 +192,7 @@ namespace zqdb
                 + strAnd + CLIENTTYPE + strEqual + strClientType
                 + strAnd + CLIENTVER + strEqual + strClientVer
                 + strAnd + DEVICETOKEN + strEqual + strDeviceToken
+                + strAnd + NONCESTR + strEqual + strNonceStr
                 + strAnd + TIMESTAMP + strEqual + strTimeStamp;
 
             if (strUserId.Length > 0)
@@ -161,30 +210,41 @@ namespace zqdb
 
     public class Player
     {
+        public static Dictionary<string, string> dcCityLibrary = new Dictionary<string, string>();
+
+        HttpParam pmLogin;
         HttpParam pmNotReadNum;
-        public static Dictionary<string, string> dcCityLibrary = new Dictionary<string,string>();
- 
-        static void SetHttpRequestHeader(DxWinHttp _http)
+        JObject joAddress;
+        string strAddress;
+        public Thread thread;
+        public JObject joLoginParam;
+        public string strTelephone;
+        public int nIndex;
+
+        static Dictionary<int, bool> dc_ConcertId_Finished = new Dictionary<int, bool>();
+        static Dictionary<int, Dictionary<string, int>> dc_ConcertId_dcPriceGoodId = new Dictionary<int, Dictionary<string, int>>();
+
+        
+        static void SetHttpRequestHeader(ref DxWinHttp _http, string _sign)
         {
             _http.SetProxy(2, "127.0.0.1:8888", "0");
             _http.ClearPostData();
-            _http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            _http.SetRequestHeader("Host", "server.expop.com.cn");
-            _http.SetRequestHeader("Connection", "Keep-Alive");
+            //_http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            _http.SetRequestHeader("Host", "api.expop.com.cn");
+            //_http.SetRequestHeader("Connection", "Keep-Alive");
             _http.SetRequestHeader("Accept-Encoding", "gzip");
-            _http.SetRequestHeader("User-Agent", "okhttp/3.4.1");
+            //_http.SetRequestHeader("User-Agent", "okhttp/3.4.1");
+            _http.SetRequestHeader("Encrypt-Sign", _sign);
         }
 
-        public static void GetCityLibrary(string strLoginParam)
+        public void GetCityLibrary()
         {
             while (true)
             {
-                HttpParam pmCityLibrary = new HttpParam(strLoginParam);
-                pmCityLibrary.strUserId = @"";
-                pmCityLibrary.strUserToken = @"";
+                HttpParam pmCityLibrary = new HttpParam(pmLogin, false);
                 DxWinHttp http = new DxWinHttp();
                 http.Open("POST", HttpParam.URL + @"address/cityLibrary.action", true);
-                SetHttpRequestHeader(http);
+                SetHttpRequestHeader(ref http, pmCityLibrary.GetSign());
                 http.Send(pmCityLibrary.GetParam());
 
                 bool succeeded = false;
@@ -212,49 +272,107 @@ namespace zqdb
             {
                 DxWinHttp http = new DxWinHttp();
                 http.Open("POST", HttpParam.URL + @"news/notReadNum.action", true);
-                SetHttpRequestHeader(http);
+                SetHttpRequestHeader(ref http, pmNotReadNum.GetSign());
                 http.Send(pmNotReadNum.GetParam());
-                Thread.Sleep(HttpParam.NOTREADNUM_INTERVAL * 1000);
+                Thread.Sleep(AllPlayers.nNotReadNumInterval * 1000);
             }
         }
 
-        void SendSectionOrder(string strParam)
+        public void SendPrices(int concertId)
         {
             while (true)
             {
-                DxWinHttp http = new DxWinHttp();
-                http.Open("POST", HttpParam.URL + @"ticket/sectionOrder.action", true);
-                SetHttpRequestHeader(http);
-                http.Send(strParam);
-
-                bool succeeded = false;
-                http.WaitForResponse(30, out succeeded);
-                if (succeeded)
+                HttpParam pmPrices = new HttpParam(pmLogin);
+                pmPrices.joBody = new JObject(
+                    new JProperty("concertId", concertId)
+                    );
+                JObject joPricesReturn = new JObject();
+                Dictionary<string, int> dcPriceGoodId = new Dictionary<string, int>();
+                while (true)
                 {
-                    Console.Write(http.ResponseBody);
-                    JObject joSectionOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
-                    if ((string)joSectionOrderReturn["code"] == @"0")
+                    DxWinHttp http = new DxWinHttp();
+                    http.Open("POST", HttpParam.URL + @"ticket/prices.action", true);
+                    SetHttpRequestHeader(ref http, pmPrices.GetParam());
+                    http.Send(pmPrices.GetParam());
+
+                    bool succeeded = false;
+                    http.WaitForResponse(30, out succeeded);
+                    if (succeeded)
                     {
-                        break;
+                        //Console.Write(http.ResponseBody);
+                        joPricesReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                        if ((string)joPricesReturn["code"] == @"0")
+                        {
+                            JArray jaPrices = (JArray)joPricesReturn["data"]["prices"];
+                            foreach (JObject joPrice in jaPrices)
+                            {
+                                if ((string)joPrice["restStock"] != @"0")
+                                {
+                                    dcPriceGoodId.Add((string)joPrice["title"], (int)joPrice["goodsId"]);
+                                }
+                            }
+                            dc_ConcertId_dcPriceGoodId[concertId] = dcPriceGoodId;
+                            dc_ConcertId_Finished[concertId] = true;
+                            break;
+                        }
+                    }
+
+                    if (DateTime.Now < AllPlayers.dtStartTime)
+                    {
+                        if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 60000)
+                            Thread.Sleep(60000);
+                        else if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 1000)
+                            Thread.Sleep(1000);
                     }
                 }
             }
         }
 
-
-        public void Run(string strLoginParam)
+        public void SendPricesWithThread()
         {
-            //HttpParam param = new HttpParam(strLoginParam);
-            //param.GetParam();
+            dc_ConcertId_Finished.Clear();
+            dc_ConcertId_dcPriceGoodId.Clear();
 
+            foreach (JObject joPrice in AllPlayers.jaConcert)
+            {
+                Thread thread = new Thread(new ThreadStart(() => SendPrices(int.Parse((string)joPrice["ConcertId"])) ));
+                thread.Start();
+            }
+        }
+
+        void SendSectionOrder(string strSign, string strParam)
+        {
+            DxWinHttp http = new DxWinHttp();
+            http.Open("POST", HttpParam.URL + @"ticket/sectionOrder.action", true);
+            SetHttpRequestHeader(ref http, strSign);
+            http.Send(strParam);
+
+            bool succeeded = false;
+            http.WaitForResponse(30, out succeeded);
+            if (succeeded)
+            {
+                Console.Write(http.ResponseBody);
+                JObject joSectionOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                if ((string)joSectionOrderReturn["code"] == @"0")
+                {
+                    Program.form1.UpdateDataGridView(strTelephone, Column.OrderInfo, (string)joSectionOrderReturn["msg"]);
+                }
+            }
+        }
+
+        public void Run()
+        {
+            Program.form1.UpdateDataGridView(strTelephone, Column.Login, "false");
+            Program.form1.UpdateDataGridView(strTelephone, Column.OrderInfo, @"");
+           
             // login.action
-            HttpParam pmLogin = new HttpParam(strLoginParam);
+            pmLogin = new HttpParam(joLoginParam);
             JObject joLoginReturn = new JObject();
             while (true)
             {
                 DxWinHttp http = new DxWinHttp();
                 http.Open("POST", HttpParam.URL + @"account/login.action", true);
-                SetHttpRequestHeader(http);
+                SetHttpRequestHeader(ref http, pmLogin.GetSign());
                 http.Send(pmLogin.GetParam());
 
                 bool succeeded = false;
@@ -271,101 +389,133 @@ namespace zqdb
             }
             pmLogin.strUserId = (string)joLoginReturn["data"][HttpParam.USERID];
             pmLogin.strUserToken = (string)joLoginReturn["data"][HttpParam.USERTOKEN];
+            Program.form1.UpdateDataGridView(strTelephone, Column.Login, "true");
+            if (AllPlayers.nLoginTimes == 1)
+                Program.form1.UpdateDataGridView(strTelephone, Column.Name, (string)joLoginReturn["data"]["realName"]);
+
+            // Prices.action
+            if (nIndex == 0)
+            {
+                SendPricesWithThread();
+            }
 
             // addressList.action
-            HttpParam pmAddressList = new HttpParam(pmLogin);
-            pmAddressList.joBody = new JObject();
-            JObject joAddressListReturn = new JObject();
-            while (true)
+            if (AllPlayers.nLoginTimes == 1)
             {
-                DxWinHttp http = new DxWinHttp();
-                http.Open("POST", HttpParam.URL + @"address/addressList.action", true);
-                SetHttpRequestHeader(http);
-                http.Send(pmAddressList.GetParam());
-
-                bool succeeded = false;
-                http.WaitForResponse(30, out succeeded);
-                if (succeeded)
+                HttpParam pmAddressList = new HttpParam(pmLogin);
+                pmAddressList.joBody = new JObject();
+                JObject joAddressListReturn = new JObject();
+                while (true)
                 {
-                    Console.Write(http.ResponseBody);
-                    joAddressListReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
-                    if ((string)joAddressListReturn["code"] == @"0")
+                    DxWinHttp http = new DxWinHttp();
+                    http.Open("POST", HttpParam.URL + @"address/addressList.action", true);
+                    SetHttpRequestHeader(ref http, pmAddressList.GetSign());
+                    http.Send(pmAddressList.GetParam());
+
+                    bool succeeded = false;
+                    http.WaitForResponse(30, out succeeded);
+                    if (succeeded)
                     {
-                        break;
+                        Console.Write(http.ResponseBody);
+                        joAddressListReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                        if ((string)joAddressListReturn["code"] == @"0")
+                        {
+                            JArray jaAddressList = (JArray)joAddressListReturn["data"]["list"];
+                            joAddress = new JObject();
+                            foreach (JObject addr in jaAddressList)
+                            {
+                                if ((int)addr["isDefault"] == 1)
+                                {
+                                    joAddress = addr;
+                                    break;
+                                }
+                            }
+                            string strProvince = dcCityLibrary[(string)joAddress["provinceCode"]];
+                            string strCity = dcCityLibrary[(string)joAddress["cityCode"]];
+                            string strArea = dcCityLibrary[(string)joAddress["areaCode"]];
+                            strAddress = strProvince + @" " + strCity + @" " + strArea + @" " + (string)joAddress["address"];
+                            Program.form1.UpdateDataGridView(strTelephone, Column.Address, strAddress);
+                            break;
+                        }
                     }
                 }
             }
-            
-            // prices.action
-            HttpParam pmPrices = new HttpParam(pmLogin);
-            pmPrices.joBody = new JObject(
-                new JProperty("concertId", HttpParam.CONCERTID)
-                );
-            JObject joPricesReturn = new JObject();
-            Dictionary<string, int> dcPriceGoodId = new Dictionary<string, int>(); 
-            while (true)
-            {
-                DxWinHttp http = new DxWinHttp();
-                http.Open("POST", HttpParam.URL + @"ticket/prices.action", true);
-                SetHttpRequestHeader(http);
-                http.Send(pmPrices.GetParam());
 
-                bool succeeded = false;
-                http.WaitForResponse(30, out succeeded);
-                if (succeeded)
+            // cancel.action
+            if (AllPlayers.nLoginTimes > 1)
+            {
+                HttpParam pmMyOrder = new HttpParam(pmLogin);
+                pmMyOrder.joBody = new JObject(
+                    new JProperty("time", HttpParam.Timestamp()),
+                    new JProperty("orderStatus", "0"),
+                    new JProperty("startIndex", "0"),
+                    new JProperty("pageSize", 20)
+                    );
+                JObject joMyOrderReturn = new JObject();
+                while (true)
                 {
-                    Console.Write(http.ResponseBody);
-                    joPricesReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
-                    if ((string)joPricesReturn["code"] == @"0")
+                    DxWinHttp http = new DxWinHttp();
+                    http.Open("POST", HttpParam.URL + @"user/myOrders.action", true);
+                    SetHttpRequestHeader(ref http, pmMyOrder.GetParam());
+                    http.Send(pmMyOrder.GetParam());
+
+                    bool succeeded = false;
+                    http.WaitForResponse(30, out succeeded);
+                    if (succeeded)
                     {
-                        JArray jaPrices = (JArray)joPricesReturn["data"]["prices"];
-                        foreach(JObject joPrice in jaPrices)
+                        //Console.Write(http.ResponseBody);
+                        joMyOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                        if ((string)joMyOrderReturn["code"] == @"0")
                         {
-                            if((string)joPrice["restStock"] != @"0")
+                            JArray jaOrder = (JArray)joMyOrderReturn["data"]["list"];
+                            foreach (JObject order in jaOrder)
                             {
-                                dcPriceGoodId.Add((string)joPrice["title"], (int)joPrice["goodsId"]);
+                                if ((string)order["orderType"] == "3" && (string)order["orderStatus"] == "0")
+                                {
+                                    HttpParam pmCancel = new HttpParam(pmLogin);
+                                    pmCancel.joBody = new JObject(
+                                        new JProperty("orderId", (string)order["orderId"])
+                                        );
+                                    JObject joCancel = new JObject();
+                                    DxWinHttp httpCancel = new DxWinHttp();
+                                    httpCancel.Open("POST", HttpParam.URL + @"user/myOrders.action", true);
+                                    SetHttpRequestHeader(ref httpCancel, pmCancel.GetSign());
+                                    httpCancel.Send(pmCancel.GetParam());
+                                }
                             }
+                            break;
                         }
-                        break;
                     }
-                }
+                }              
             }
             
             // notReadNum.action
-            pmNotReadNum = new HttpParam(pmLogin);
-            pmNotReadNum.joBody = new JObject(
-                new JProperty("type", (int)16843169),
-                new JProperty(HttpParam.USERID, pmLogin.strUserId)
-                );
-            Thread threadNotReadNum = new Thread(new ThreadStart(SendNotReadNum));
-            threadNotReadNum.Start();
-
-            // wait start time
-            while ((DateTime.Now < HttpParam.DATETIMERUN))
+            if (AllPlayers.nLoginTimes == 1)
             {
-                Thread.Sleep(100);
-            }
-            threadNotReadNum.Abort();
+                pmNotReadNum = new HttpParam(pmLogin);
+                pmNotReadNum.joBody = new JObject(
+                    new JProperty("type", (int)16843169),
+                    new JProperty(HttpParam.USERID, pmLogin.strUserId)
+                    );
+                Thread threadNotReadNum = new Thread(new ThreadStart(SendNotReadNum));
+                threadNotReadNum.Start();
 
+                // wait start time
+                while ((DateTime.Now < AllPlayers.dtStartTime))
+                {
+                    if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 60000)
+                        Thread.Sleep(60000);
+                    else if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 1000)
+                        Thread.Sleep(1000);
+                    else
+                        Thread.Sleep(100);
+                }
+                threadNotReadNum.Abort();
+            }
             
             // sectionOrder.action
             HttpParam pmSectionOrder = new HttpParam(pmLogin);
             JObject joSectionOrder = new JObject();
-
-            JArray jaAddressList = (JArray)joAddressListReturn["data"]["list"];
-            JObject joAddress = new JObject();
-            foreach(JObject addr in jaAddressList)
-            {
-                if((int)addr["isDefault"] == 1)
-                {
-                    joAddress = addr;
-                    break;
-                }
-            }
-            string strProvince = dcCityLibrary[(string)joAddress["provinceCode"]];
-            string strCity = dcCityLibrary[(string)joAddress["cityCode"]];
-            string strArea = dcCityLibrary[(string)joAddress["areaCode"]];
-            string strAddress = strProvince + @" " + strCity + @" " + strArea + @" " + (string)joAddress["address"];
 
             pmSectionOrder.joBody = new JObject(
                 new JProperty("address", strAddress),
@@ -374,41 +524,128 @@ namespace zqdb
                 new JProperty("addressId", (string)joAddress["addressId"]),
                 new JProperty("phone", (string)joAddress["phone"]),
                 new JProperty("goodsIds", @" "),
-                new JProperty("concertId", Convert.ToString(HttpParam.CONCERTID))
+                new JProperty("concertId", @" ")
                 );
 
-            string[] arrayPrices = HttpParam.PRICES.Split(new Char[] {',', ' ', ';'});
-            List<string> listPrices = new List<string>();
-            foreach(string price in arrayPrices)
-            {
-                if(dcPriceGoodId.ContainsKey(price))
-                    listPrices.Add(price);
-            }
-
             List<Thread> listThread = new List<Thread>();
-            foreach(string price in listPrices)
+            foreach (JObject joPrice in AllPlayers.jaConcert)
             {
-                pmSectionOrder.joBody["goodsIds"] = Convert.ToString(dcPriceGoodId[price]);
-                Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(pmSectionOrder.GetParam())));
-                threadSectionOrder.Start();
-                listThread.Add(threadSectionOrder);
-            }
+                int nConcertId = (int)joPrice["ConcertId"];
+                string strPrices = (string)joPrice["Prices"];
+                string[] arrayPrices = strPrices.Split(new Char[] { ',', ' ', ';' });
+                while(!dc_ConcertId_Finished[nConcertId])
+                {
+                    Thread.Sleep(1);
+                }
+
+                foreach (string price in arrayPrices)
+                {
+                    if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price)) 
+                    {
+                        pmSectionOrder.joBody["goodsIds"] = string.Format("{0},{0},{0},{0}", price);
+                        Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(pmSectionOrder.GetSign(), pmSectionOrder.GetParam())));
+                        threadSectionOrder.Start();
+                        listThread.Add(threadSectionOrder);
+                    }
+
+                }
+            } 
 
         }
     };
-    
-    //class Program
-    //{
-    //    static void Main(string[] args)
-    //    {
-    //        string strMyOrder = File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + "\\myorder.txt");
-    //        Player player = new Player();
-    //        player.Run(strMyOrder);
-           
 
-    //        Console.WriteLine("timestamp:{0}", HttpParam.Timestamp());
+    class AllPlayers
+    {
+        public static JArray jaConcert;
+        public static DateTime dtStartTime;
+        public static int nNotReadNumInterval;
+        public static int nReloginInterval;
+        public static int nLoginTimes = 1;
+        
+        List<Player> listPlayer = new List<Player>();
 
-    //        Console.Read();
-    //    }
-    //}
+        public void Init(string strFileName)
+        {
+            string[] arrayText = File.ReadAllLines(strFileName);
+
+            JObject joInfo = (JObject)JsonConvert.DeserializeObject(arrayText[0]);
+            jaConcert = (JArray)joInfo["list"];
+            dtStartTime = DateTime.Parse((string)joInfo["StartTime"]);
+            nNotReadNumInterval = (int)joInfo["NotReadNumInterval"];
+            nReloginInterval = (int)joInfo["ReLoginInterval"];
+            Program.form1.Form1_Init();
+
+            for (int i = 1; i < arrayText.Length; ++i)
+            {
+                int startIndex = arrayText[i].IndexOf("=");
+                string paramUri = arrayText[i].Substring(startIndex + 1);
+                string param = Uri.UnescapeDataString(paramUri);
+                JObject joParam = (JObject)JsonConvert.DeserializeObject(param);
+                Program.form1.dataGridViewInfo_AddRow(joParam);
+
+                Player player = new Player();
+                player.nIndex = i - 1;
+                player.joLoginParam = joParam;
+                player.strTelephone = (string)joParam[HttpParam.BODY]["phone"];
+                player.thread = new Thread(new ThreadStart(player.Run));
+                //player.thread.Start();
+                listPlayer.Add(player);
+            }
+       }
+
+
+        public void Run()
+        {
+            // first login
+            foreach(Player player in listPlayer)
+            {
+                player.thread.Start();
+            }
+
+            // relogin
+            Thread threadRelogin = new Thread(new ThreadStart(this.WaitForRelogin));
+            threadRelogin.Start();
+        }
+
+        void Relogin()
+        {
+            nLoginTimes = nLoginTimes + 1;
+            Program.form1.UpdateLoginTimes(); 
+            
+            foreach (Player player in listPlayer)
+            {
+                player.thread.Abort();
+                player.thread = new Thread(new ThreadStart(player.Run));
+                player.thread.Start();
+            }
+        }
+
+        void WaitForRelogin()
+        {
+            while(true)
+            {
+                if(DateTime.Now < AllPlayers.dtStartTime)
+                {
+                    TimeSpan span = (AllPlayers.dtStartTime - DateTime.Now);
+                    Thread.Sleep((int)span.TotalMilliseconds + (AllPlayers.nReloginInterval - 1) * 1000);
+                }
+                else
+                {
+                    TimeSpan span = DateTime.Now - AllPlayers.dtStartTime;
+                    int nTotalSeconds = (int)span.TotalSeconds % AllPlayers.nReloginInterval;
+
+                    if ((AllPlayers.nReloginInterval - nTotalSeconds) > 5)
+                    {
+                        Thread.Sleep((AllPlayers.nReloginInterval - nTotalSeconds - 5) * 1000);
+                    }
+                    else 
+                    {
+                        Relogin();
+                        Thread.Sleep((AllPlayers.nReloginInterval - 5) * 1000);
+                    }
+                }
+            }
+        }
+    };
+     
 }
