@@ -225,7 +225,7 @@ namespace zqdb
         static Dictionary<int, Dictionary<string, int>> dc_ConcertId_dcPriceGoodId = new Dictionary<int, Dictionary<string, int>>();
 
         
-        static void SetHttpRequestHeader(ref DxWinHttp _http, string _sign)
+        void SetHttpRequestHeader(ref DxWinHttp _http, string _sign)
         {
             _http.SetProxy(2, "127.0.0.1:8888", "0");
             _http.ClearPostData();
@@ -235,6 +235,18 @@ namespace zqdb
             _http.SetRequestHeader("Accept-Encoding", "gzip");
             //_http.SetRequestHeader("User-Agent", "okhttp/3.4.1");
             _http.SetRequestHeader("Encrypt-Sign", _sign);
+        }
+
+        void WaitForResponse(ref DxWinHttp _http)
+        {
+            bool succeeded = false;
+            string ret;
+            do
+            {
+                ret = _http.WaitForResponse(30, out succeeded);
+                if (ret != @"true")
+                    break;
+            } while (_http.ResponseBody.Length <= 0);
         }
 
         public void GetCityLibrary()
@@ -247,9 +259,8 @@ namespace zqdb
                 SetHttpRequestHeader(ref http, pmCityLibrary.GetSign());
                 http.Send(pmCityLibrary.GetParam());
 
-                bool succeeded = false;
-                http.WaitForResponse(30, out succeeded);
-                if (succeeded)
+                WaitForResponse(ref http);
+                if (http.ResponseBody.Length > 0)
                 {
                     JObject joCityLibraryResult = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                     if ((string)joCityLibraryResult["code"] == @"0")
@@ -295,11 +306,9 @@ namespace zqdb
                     SetHttpRequestHeader(ref http, pmPrices.GetParam());
                     http.Send(pmPrices.GetParam());
 
-                    bool succeeded = false;
-                    http.WaitForResponse(30, out succeeded);
-                    if (succeeded)
+                    WaitForResponse(ref http);
+                    if (http.ResponseBody.Length > 0)
                     {
-                        //Console.Write(http.ResponseBody);
                         joPricesReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                         if ((string)joPricesReturn["code"] == @"0")
                         {
@@ -347,11 +356,10 @@ namespace zqdb
             SetHttpRequestHeader(ref http, strSign);
             http.Send(strParam);
 
-            bool succeeded = false;
-            http.WaitForResponse(30, out succeeded);
-            if (succeeded)
+            WaitForResponse(ref http);
+            if (http.ResponseBody.Length > 0)
             {
-                Console.Write(http.ResponseBody);
+                Console.WriteLine(http.ResponseBody);
                 JObject joSectionOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                 if ((string)joSectionOrderReturn["code"] == @"0")
                 {
@@ -360,11 +368,12 @@ namespace zqdb
             }
         }
 
+
         public void Run()
         {
             Program.form1.UpdateDataGridView(strTelephone, Column.Login, "false");
             Program.form1.UpdateDataGridView(strTelephone, Column.OrderInfo, @"");
-           
+
             // login.action
             pmLogin = new HttpParam(joLoginParam);
             JObject joLoginReturn = new JObject();
@@ -375,11 +384,9 @@ namespace zqdb
                 SetHttpRequestHeader(ref http, pmLogin.GetSign());
                 http.Send(pmLogin.GetParam());
 
-                bool succeeded = false;
-                http.WaitForResponse(30, out succeeded);
-                if (succeeded)
+                WaitForResponse(ref http);
+                if(http.ResponseBody.Length > 0)
                 {
-                    Console.Write(http.ResponseBody);
                     joLoginReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                     if ((string)joLoginReturn["code"] == @"0")
                     {
@@ -412,11 +419,10 @@ namespace zqdb
                     SetHttpRequestHeader(ref http, pmAddressList.GetSign());
                     http.Send(pmAddressList.GetParam());
 
-                    bool succeeded = false;
-                    http.WaitForResponse(30, out succeeded);
-                    if (succeeded)
+                    WaitForResponse(ref http);
+                    if (http.ResponseBody.Length > 0)
                     {
-                        Console.Write(http.ResponseBody);
+                        Console.WriteLine(http.ResponseBody);
                         joAddressListReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                         if ((string)joAddressListReturn["code"] == @"0")
                         {
@@ -459,11 +465,10 @@ namespace zqdb
                     SetHttpRequestHeader(ref http, pmMyOrder.GetParam());
                     http.Send(pmMyOrder.GetParam());
 
-                    bool succeeded = false;
-                    http.WaitForResponse(30, out succeeded);
-                    if (succeeded)
+                    WaitForResponse(ref http);
+                    if (http.ResponseBody.Length > 0)
                     {
-                        //Console.Write(http.ResponseBody);
+                        //Console.WriteLine(http.ResponseBody);
                         joMyOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                         if ((string)joMyOrderReturn["code"] == @"0")
                         {

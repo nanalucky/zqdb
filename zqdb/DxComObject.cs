@@ -133,7 +133,7 @@ namespace DxComOperate
                     AdoStream.DoMethod("Write", new object[1] { HttpObj["ResponseBody"] });
                     AdoStream["Position"] = 0;
                     AdoStream["Type"] = 2;
-                    AdoStream["Charset"] = "GB2312";
+                    AdoStream["Charset"] = "UTF-8";
                     return AdoStream["ReadText"].ToString();
                 }
                 else return "";
