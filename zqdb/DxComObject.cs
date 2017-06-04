@@ -65,58 +65,18 @@ namespace DxComOperate
     public class DxWinHttp
     {
         private DxComObject HttpObj;
-        private string _ContentType;
-        private int _ContentLength;
         private bool _Active;
-        private System.Collections.ArrayList PostDataList;//提交的数据字段
         public DxWinHttp()
         {
             //构建WinHttp对象
             HttpObj = new DxComObject("WinHttp.WinHttpRequest.5.1");
-            _ContentType = "application/x-www-form-urlencoded";
-            _ContentLength = 0;
-            PostDataList = new System.Collections.ArrayList();
         }
 
-        //提交参数信息的个数
-        public int PostDataCount
-        {
-            get { return PostDataList.Count; }
-        }
-        //设置Content-Type属性
-        public string ContentType
-        {
-            get { return _ContentType; }
-            set
-            {
-                if (!_Active) _ContentType = value;
-                else if (_ContentType.CompareTo(value) != 0)
-                {
-                    _ContentType = value;
-                    SetRequestHeader("Content-Type", _ContentType);
-                }
-            }
-        }
 
         //对象是否是打开状态
         public bool Active
         {
             get { return _Active; }
-        }
-
-        //设置Send数据的长度 
-        public int ContentLength
-        {
-            get { return _ContentLength; }
-            set
-            {
-                if (!_Active) _ContentLength = value;
-                else if (_ContentLength != value)
-                {
-                    _ContentLength = value;
-                    HttpObj.DoMethod("SetRequestHeader", new object[2] { "Content-Length", value });
-                }
-            }
         }
 
         //执行之后返回的结果
@@ -126,15 +86,19 @@ namespace DxComOperate
             {
                 if (_Active)
                 {
-                    DxComObject AdoStream = new DxComObject("Adodb.Stream");
-                    AdoStream["Type"] = 1;
-                    AdoStream["Mode"] = 3;
-                    AdoStream.DoMethod("Open", new object[] { });
-                    AdoStream.DoMethod("Write", new object[1] { HttpObj["ResponseBody"] });
-                    AdoStream["Position"] = 0;
-                    AdoStream["Type"] = 2;
-                    AdoStream["Charset"] = "UTF-8";
-                    return AdoStream["ReadText"].ToString();
+                    if (HttpObj["ResponseBody"] != null)
+                    {
+                        DxComObject AdoStream = new DxComObject("Adodb.Stream");
+                        AdoStream["Type"] = 1;
+                        AdoStream["Mode"] = 3;
+                        AdoStream.DoMethod("Open", new object[] { });
+                        AdoStream.DoMethod("Write", new object[1] { HttpObj["ResponseBody"] });
+                        AdoStream["Position"] = 0;
+                        AdoStream["Type"] = 2;
+                        AdoStream["Charset"] = "UTF-8";
+                        return AdoStream["ReadText"].ToString();
+                    }
+                    else return "";
                 }
                 else return "";
             }
@@ -161,10 +125,7 @@ namespace DxComOperate
             }
             else
             {
-                SetRequestHeader("Content-Type", _ContentType);
-                SetRequestHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
-                if (_ContentLength != 0) SetRequestHeader("Content-Length", _ContentLength);
-                _Active = true;
+               _Active = true;
                 return "True";
             }
         }
@@ -177,33 +138,6 @@ namespace DxComOperate
             obj = HttpObj.DoMethod("Send", new object[1] { body });
             if (obj != null) return obj.ToString();
             else return "True";
-        }
-
-        public void ClearPostData()
-        {
-            this.PostDataList.Clear();
-        }
-        //增加提交数据信息
-        public void AddPostField(string FieldName, object Value)
-        {
-            this.PostDataList.Add(FieldName + "=" + Value.ToString());
-        }
-
-        //通过参数指定提交
-        public string DxPost()
-        {
-            if (!_Active)
-            {
-                return "False";
-            }
-            string st = "";
-            for (int i = 0; i < this.PostDataList.Count; i++)
-            {
-                if (st != "") st = st + "&" + PostDataList[i].ToString();
-                else st = PostDataList[i].ToString();
-            }
-            this.ContentLength = st.Length;
-            return Send(st);
         }
 
         //设置等待超时等
@@ -219,19 +153,18 @@ namespace DxComOperate
         {
             if (!_Active) { Succeeded = false; return ""; }
             object obj;
-            bool succ;
-            succ = false;
-            System.Reflection.ParameterModifier[] ParamesM;
-            ParamesM = new System.Reflection.ParameterModifier[1];
-            ParamesM[0] = new System.Reflection.ParameterModifier(2); // 初始化为接口参数的个数
-            ParamesM[0][1] = true; // 设置第二个参数为返回参数
+            bool succ = false;
+            //System.Reflection.ParameterModifier[] ParamesM = new System.Reflection.ParameterModifier[1];
+            //ParamesM[0] = new System.Reflection.ParameterModifier(2); // 初始化为接口参数的个数
+            //ParamesM[0][1] = true; // 设置第二个参数为返回参数
 
-            //ParamesM[1] = true;
+            System.Reflection.ParameterModifier p = new System.Reflection.ParameterModifier(2);
+            p[1] = true;
+            System.Reflection.ParameterModifier[] ParamesM = { p };
+
             object[] ParamArray = new object[2] { Timeout, succ };
             obj = HttpObj.DoMethod("WaitForResponse", ParamArray, ParamesM);
-            //System.Windows.Forms.MessageBox.Show(ParamArray[1].ToString());
             Succeeded = bool.Parse(ParamArray[1].ToString());
-            //Succeeded = bool.Parse(ParamArray[1].ToString);
             if (obj != null) { return obj.ToString(); }
             else return "True";
         }
