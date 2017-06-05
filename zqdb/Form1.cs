@@ -46,6 +46,11 @@ namespace zqdb
             textBoxStartTime.Text = AllPlayers.dtStartTime.ToShortTimeString();
             textBoxReloginInterval.Text = Convert.ToString(AllPlayers.nReloginInterval);
             textBoxNotReadNumInterval.Text = Convert.ToString(AllPlayers.nNotReadNumInterval);
+            if (AllPlayers.bSetProxy)
+                textBoxSetProxy.Text = "true";
+            else
+                textBoxSetProxy.Text = "false";
+
             listBoxConcertIdPrices.Items.Clear();
             foreach (JObject joPrice in AllPlayers.jaConcert)
             {
@@ -58,7 +63,7 @@ namespace zqdb
 
         public void dataGridViewInfo_AddRow(JObject joPlayer)
         {
-            dataGridViewInfo.Rows.Add((string)joPlayer["phone"]);
+            dataGridViewInfo.Rows.Add((string)joPlayer["body"]["phone"]);
         }        
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -118,13 +123,18 @@ namespace zqdb
             int nCount = dataGridViewInfo.Rows.Count;
             for (int i = 0; i < nCount; ++i)
             {
-                if ((string)dataGridViewInfo[i, (int)Column.Telephone].Value == telephone)
+                if ((string)dataGridViewInfo[(int)Column.Telephone, i].Value == telephone)
                 {
-                    dataGridViewInfo[i, (int)colIndex].Value = colValue;
+                    dataGridViewInfo[(int)colIndex, i].Value = colValue;
                     return;
                 }
             }
             
+        }
+
+        private void labelLoginTimes_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -138,7 +138,7 @@ namespace zqdb
             return strParamUri;
         }
 
-        public string UpdateNonceStr(string strTest = "")
+        public void UpdateNonceStr(string strTest = "")
         {
             string strMd5 = strNonceStr.Substring(0, 32);
             string nonceStr;
@@ -158,8 +158,7 @@ namespace zqdb
                 int nRandom = (new Random()).Next(100000);
                 nonceStr = string.Format("{0}{1}{2}", strMd5, nCurTimeMillis, nRandom);
             }
-
-            return nonceStr;
+            strNonceStr = nonceStr;
         }
 
         public static string Timestamp()  
@@ -212,6 +211,7 @@ namespace zqdb
     {
         public static Dictionary<string, string> dcCityLibrary = new Dictionary<string, string>();
         public static bool bCityLibraryFinished = false;
+        public static List<Thread> listPricesThread = new List<Thread>();
 
         HttpParam pmLogin;
         HttpParam pmNotReadNum;
@@ -228,7 +228,9 @@ namespace zqdb
         
         void SetHttpRequestHeader(ref DxWinHttp _http, string _sign)
         {
-            _http.SetProxy(2, "127.0.0.1:8888", "0");
+            if(AllPlayers.bSetProxy)
+                _http.SetProxy(2, "127.0.0.1:8888", "0");
+
             _http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             _http.SetRequestHeader("Host", "api.expop.com.cn");
             //_http.SetRequestHeader("Connection", "Keep-Alive");
@@ -280,10 +282,23 @@ namespace zqdb
         {
             while (true)
             {
-                DxWinHttp http = new DxWinHttp();
-                http.Open("POST", HttpParam.URL + @"news/notReadNum.action", true);
-                SetHttpRequestHeader(ref http, pmNotReadNum.GetSign());
-                http.Send(pmNotReadNum.GetParam());
+                while (true)
+                {
+                    DxWinHttp http = new DxWinHttp();
+                    http.Open("POST", HttpParam.URL + @"news/notReadNum.action", true);
+                    SetHttpRequestHeader(ref http, pmNotReadNum.GetSign());
+                    http.Send(pmNotReadNum.GetParam());
+
+                    WaitForResponse(ref http);
+                    if (http.ResponseBody.Length > 0)
+                    {
+                        JObject joNotReadNumResult = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                        if ((string)joNotReadNumResult["code"] == @"0")
+                        {
+                            break;
+                        }
+                    }
+                } 
                 Thread.Sleep(AllPlayers.nNotReadNumInterval * 1000);
             }
         }
@@ -308,6 +323,9 @@ namespace zqdb
                     WaitForResponse(ref http);
                     if (http.ResponseBody.Length > 0)
                     {
+                        //string ret = File.ReadAllText("prices_return.txt");
+                        //joPricesReturn = (JObject)JsonConvert.DeserializeObject(ret);
+
                         joPricesReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                         if ((string)joPricesReturn["code"] == @"0")
                         {
@@ -321,7 +339,7 @@ namespace zqdb
                             }
                             dc_ConcertId_dcPriceGoodId[concertId] = dcPriceGoodId;
                             dc_ConcertId_Finished[concertId] = true;
-                            break;
+                            return;
                         }
                     }
 
@@ -343,14 +361,22 @@ namespace zqdb
         public static void ClearConcertIdFinished()
         { 
             dc_ConcertId_Finished.Clear();
+            dc_ConcertId_dcPriceGoodId.Clear();
             foreach (JObject joPrice in AllPlayers.jaConcert)
             {
-                dc_ConcertId_Finished[int.Parse((string)joPrice["ConcertId"])] = false;
+                int nConcertId = int.Parse((string)joPrice["ConcertId"]);
+                dc_ConcertId_Finished[nConcertId] = false;
+                dc_ConcertId_dcPriceGoodId[nConcertId] = new Dictionary<string, int>();
             }        
         }
 
         public void SendPricesWithThread()
         {
+            foreach (Thread thread in listPricesThread)
+                thread.Abort();
+            listPricesThread.Clear();
+
+
             ClearConcertIdFinished();
             dc_ConcertId_dcPriceGoodId.Clear();
 
@@ -358,25 +384,36 @@ namespace zqdb
             {
                 Thread thread = new Thread(new ThreadStart(() => SendPrices(int.Parse((string)joPrice["ConcertId"]))));
                 thread.Start();
+                listPricesThread.Add(thread);
             }
         }
 
-        void SendSectionOrder(string strSign, string strParam)
+        void SendSectionOrder(HttpParam _param)
         {
-            DxWinHttp http = new DxWinHttp();
-            http.Open("POST", HttpParam.URL + @"ticket/sectionOrder.action", true);
-            SetHttpRequestHeader(ref http, strSign);
-            http.Send(strParam);
-
-            WaitForResponse(ref http);
-            if (http.ResponseBody.Length > 0)
+            while (true)
             {
-                JObject joSectionOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
-                if ((string)joSectionOrderReturn["code"] == @"0")
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", HttpParam.URL + @"ticket/sectionOrder.action", true);
+                SetHttpRequestHeader(ref http, _param.GetSign());
+                http.Send(_param.GetParam());
+
+                WaitForResponse(ref http);
+                if (http.ResponseBody.Length > 0)
                 {
-                    Program.form1.UpdateDataGridView(strTelephone, Column.OrderInfo, (string)joSectionOrderReturn["msg"]);
+                    JObject joSectionOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joSectionOrderReturn["code"] == @"0")
+                    {
+                        Program.form1.UpdateDataGridView(strTelephone, Column.OrderInfo, (string)joSectionOrderReturn["msg"]);
+                        break;
+                    }
+
+                    JToken outMsg;
+                    if (joSectionOrderReturn.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
+                    { 
+                        break;
+                    }
                 }
-            }
+            } 
         }
 
 
@@ -458,18 +495,11 @@ namespace zqdb
                             break;
                         }
                     }
-                    Thread.Sleep(1000);
                 }
             }
 
-            // Prices.action
-            if (nIndex == 0)
-            {
-                SendPricesWithThread();
-            }
-            
-            // cancel.action
-            if (AllPlayers.nLoginTimes > 1)
+            // myOrders.action & cancel.action
+            //if (AllPlayers.nLoginTimes > 1)
             {
                 HttpParam pmMyOrder = new HttpParam(pmLogin);
                 pmMyOrder.joBody = new JObject(
@@ -502,10 +532,24 @@ namespace zqdb
                                         new JProperty("orderId", (string)order["orderId"])
                                         );
                                     JObject joCancel = new JObject();
-                                    DxWinHttp httpCancel = new DxWinHttp();
-                                    httpCancel.Open("POST", HttpParam.URL + @"user/myOrders.action", true);
-                                    SetHttpRequestHeader(ref httpCancel, pmCancel.GetSign());
-                                    httpCancel.Send(pmCancel.GetParam());
+                                    while (true)
+                                    {
+                                        DxWinHttp httpCancel = new DxWinHttp();
+                                        httpCancel.Open("POST", HttpParam.URL + @"order/cancel.action", true);
+                                        SetHttpRequestHeader(ref httpCancel, pmCancel.GetSign());
+                                        httpCancel.Send(pmCancel.GetParam());
+
+                                        WaitForResponse(ref httpCancel);
+                                        if (httpCancel.ResponseBody.Length > 0)
+                                        {
+                                            joCancel = (JObject)JsonConvert.DeserializeObject(httpCancel.ResponseBody);
+                                            JToken outMsg;
+                                            if ((string)joCancel["code"] == @"0" || (joCancel.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null))
+                                            {
+                                                break;
+                                            }
+                                        }                                    
+                                    }
                                 }
                             }
                             break;
@@ -513,7 +557,13 @@ namespace zqdb
                     }
                 }              
             }
-            
+
+            // Prices.action
+            if (nIndex == 0)
+            {
+                SendPricesWithThread();
+            }
+
             // notReadNum.action
             if (AllPlayers.nLoginTimes == 1)
             {
@@ -532,8 +582,10 @@ namespace zqdb
                         Thread.Sleep(60000);
                     else if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 1000)
                         Thread.Sleep(1000);
+                    else if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 50)
+                        Thread.Sleep(50);
                     else
-                        Thread.Sleep(100);
+                        Thread.Sleep(1);
                 }
                 threadNotReadNum.Abort();
             }
@@ -563,12 +615,15 @@ namespace zqdb
                     Thread.Sleep(1);
                 }
 
+                pmSectionOrder.joBody["concertId"] = Convert.ToString(nConcertId);
                 foreach (string price in arrayPrices)
                 {
                     if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price)) 
                     {
                         pmSectionOrder.joBody["goodsIds"] = string.Format("{0},{0},{0},{0}", price);
-                        Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(pmSectionOrder.GetSign(), pmSectionOrder.GetParam())));
+                        HttpParam _pmSecitionOrder = new HttpParam(pmSectionOrder);
+                        _pmSecitionOrder.joBody = new JObject(pmSectionOrder.joBody);
+                        Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(_pmSecitionOrder)));
                         threadSectionOrder.Start();
                         listThread.Add(threadSectionOrder);
                     }
@@ -586,6 +641,7 @@ namespace zqdb
         public static int nNotReadNumInterval;
         public static int nReloginInterval;
         public static int nLoginTimes = 1;
+        public static bool bSetProxy = false;
         
         List<Player> listPlayer = new List<Player>();
 
@@ -598,6 +654,10 @@ namespace zqdb
             dtStartTime = DateTime.Parse((string)joInfo["StartTime"]);
             nNotReadNumInterval = (int)joInfo["NotReadNumInterval"];
             nReloginInterval = (int)joInfo["ReLoginInterval"];
+            if ((string)joInfo["SetProxy"] == @"0")
+                bSetProxy = false;
+            else
+                bSetProxy = true;
             Program.form1.Form1_Init();
 
             for (int i = 1; i < arrayText.Length; ++i)
@@ -623,6 +683,8 @@ namespace zqdb
 
         public void Run()
         {
+            Program.form1.UpdateLoginTimes(); 
+
             // first login
             foreach(Player player in listPlayer)
             {
@@ -649,6 +711,14 @@ namespace zqdb
 
         void WaitForRelogin()
         {
+            int nBaseTimes = 0;
+            if(DateTime.Now > AllPlayers.dtStartTime)
+            {
+                TimeSpan span = DateTime.Now - AllPlayers.dtStartTime;
+                int nSpanSeconds = (int)span.TotalSeconds;
+                nBaseTimes = (int)nSpanSeconds / AllPlayers.nReloginInterval;
+            }
+
             while(true)
             {
                 if(DateTime.Now < AllPlayers.dtStartTime)
@@ -659,16 +729,10 @@ namespace zqdb
                 else
                 {
                     TimeSpan span = DateTime.Now - AllPlayers.dtStartTime;
-                    int nTotalSeconds = (int)span.TotalSeconds % AllPlayers.nReloginInterval;
-
-                    if ((AllPlayers.nReloginInterval - nTotalSeconds) > 5)
-                    {
-                        Thread.Sleep((AllPlayers.nReloginInterval - nTotalSeconds - 5) * 1000);
-                    }
-                    else 
+                    if ((int)span.TotalSeconds > (nBaseTimes + nLoginTimes) * AllPlayers.nReloginInterval)
                     {
                         Relogin();
-                        Thread.Sleep((AllPlayers.nReloginInterval - 5) * 1000);
+                        Thread.Sleep(AllPlayers.nReloginInterval * 1000);
                     }
                 }
             }

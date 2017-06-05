@@ -42,13 +42,15 @@
             this.label7 = new System.Windows.Forms.Label();
             this.listBoxConcertIdPrices = new System.Windows.Forms.ListBox();
             this.dataGridViewInfo = new System.Windows.Forms.DataGridView();
+            this.labelLoginTimes = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.telephone = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.login = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.order = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.name = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.address = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.labelLoginTimes = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
+            this.label8 = new System.Windows.Forms.Label();
+            this.textBoxSetProxy = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewInfo)).BeginInit();
             this.SuspendLayout();
             // 
@@ -201,9 +203,32 @@
             this.dataGridViewInfo.Location = new System.Drawing.Point(46, 324);
             this.dataGridViewInfo.Name = "dataGridViewInfo";
             this.dataGridViewInfo.RowTemplate.Height = 30;
-            this.dataGridViewInfo.Size = new System.Drawing.Size(913, 434);
+            this.dataGridViewInfo.Size = new System.Drawing.Size(1353, 535);
             this.dataGridViewInfo.TabIndex = 23;
             this.dataGridViewInfo.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
+            // 
+            // labelLoginTimes
+            // 
+            this.labelLoginTimes.BackColor = System.Drawing.SystemColors.Control;
+            this.labelLoginTimes.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.labelLoginTimes.Location = new System.Drawing.Point(157, 279);
+            this.labelLoginTimes.Name = "labelLoginTimes";
+            this.labelLoginTimes.Size = new System.Drawing.Size(52, 42);
+            this.labelLoginTimes.TabIndex = 24;
+            this.labelLoginTimes.Text = "0";
+            this.labelLoginTimes.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.labelLoginTimes.Click += new System.EventHandler(this.labelLoginTimes_Click);
+            // 
+            // label4
+            // 
+            this.label4.BackColor = System.Drawing.SystemColors.Control;
+            this.label4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label4.Location = new System.Drawing.Point(46, 279);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(105, 42);
+            this.label4.TabIndex = 25;
+            this.label4.Text = "登录次数：";
+            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // telephone
             // 
@@ -232,35 +257,36 @@
             // 
             this.address.HeaderText = "完整地址";
             this.address.Name = "address";
-            this.address.Width = 200;
+            this.address.Width = 1000;
             // 
-            // labelLoginTimes
+            // label8
             // 
-            this.labelLoginTimes.BackColor = System.Drawing.SystemColors.Control;
-            this.labelLoginTimes.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.labelLoginTimes.Location = new System.Drawing.Point(157, 279);
-            this.labelLoginTimes.Name = "labelLoginTimes";
-            this.labelLoginTimes.Size = new System.Drawing.Size(52, 42);
-            this.labelLoginTimes.TabIndex = 24;
-            this.labelLoginTimes.Text = "0";
-            this.labelLoginTimes.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.label8.BackColor = System.Drawing.SystemColors.Control;
+            this.label8.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label8.Location = new System.Drawing.Point(527, 177);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(147, 42);
+            this.label8.TabIndex = 26;
+            this.label8.Text = "SetProxy";
+            this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // label4
+            // textBoxSetProxy
             // 
-            this.label4.BackColor = System.Drawing.SystemColors.Control;
-            this.label4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label4.Location = new System.Drawing.Point(46, 279);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(105, 42);
-            this.label4.TabIndex = 25;
-            this.label4.Text = "登录次数：";
-            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.textBoxSetProxy.Enabled = false;
+            this.textBoxSetProxy.Location = new System.Drawing.Point(699, 186);
+            this.textBoxSetProxy.Name = "textBoxSetProxy";
+            this.textBoxSetProxy.Size = new System.Drawing.Size(84, 28);
+            this.textBoxSetProxy.TabIndex = 27;
+            this.textBoxSetProxy.Text = "false";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1052, 799);
+            this.AutoSize = true;
+            this.ClientSize = new System.Drawing.Size(1463, 889);
+            this.Controls.Add(this.textBoxSetProxy);
+            this.Controls.Add(this.label8);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.labelLoginTimes);
             this.Controls.Add(this.dataGridViewInfo);
@@ -303,13 +329,15 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.ListBox listBoxConcertIdPrices;
         private System.Windows.Forms.DataGridView dataGridViewInfo;
+        private System.Windows.Forms.Label labelLoginTimes;
+        private System.Windows.Forms.Label label4;
         private System.Windows.Forms.DataGridViewTextBoxColumn telephone;
         private System.Windows.Forms.DataGridViewTextBoxColumn login;
         private System.Windows.Forms.DataGridViewTextBoxColumn order;
         private System.Windows.Forms.DataGridViewTextBoxColumn name;
         private System.Windows.Forms.DataGridViewTextBoxColumn address;
-        private System.Windows.Forms.Label labelLoginTimes;
-        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.TextBox textBoxSetProxy;
     }
 }
 
