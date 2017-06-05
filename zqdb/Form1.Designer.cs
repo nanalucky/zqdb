@@ -42,13 +42,13 @@
             this.label7 = new System.Windows.Forms.Label();
             this.listBoxConcertIdPrices = new System.Windows.Forms.ListBox();
             this.dataGridViewInfo = new System.Windows.Forms.DataGridView();
-            this.labelLoginTimes = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
             this.telephone = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.login = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.order = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.name = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.address = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.labelLoginTimes = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.textBoxSetProxy = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewInfo)).BeginInit();
@@ -207,29 +207,6 @@
             this.dataGridViewInfo.TabIndex = 23;
             this.dataGridViewInfo.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             // 
-            // labelLoginTimes
-            // 
-            this.labelLoginTimes.BackColor = System.Drawing.SystemColors.Control;
-            this.labelLoginTimes.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.labelLoginTimes.Location = new System.Drawing.Point(157, 279);
-            this.labelLoginTimes.Name = "labelLoginTimes";
-            this.labelLoginTimes.Size = new System.Drawing.Size(52, 42);
-            this.labelLoginTimes.TabIndex = 24;
-            this.labelLoginTimes.Text = "0";
-            this.labelLoginTimes.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.labelLoginTimes.Click += new System.EventHandler(this.labelLoginTimes_Click);
-            // 
-            // label4
-            // 
-            this.label4.BackColor = System.Drawing.SystemColors.Control;
-            this.label4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label4.Location = new System.Drawing.Point(46, 279);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(105, 42);
-            this.label4.TabIndex = 25;
-            this.label4.Text = "登录次数：";
-            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
             // telephone
             // 
             this.telephone.HeaderText = "手机号";
@@ -258,6 +235,29 @@
             this.address.HeaderText = "完整地址";
             this.address.Name = "address";
             this.address.Width = 1000;
+            // 
+            // labelLoginTimes
+            // 
+            this.labelLoginTimes.BackColor = System.Drawing.SystemColors.Control;
+            this.labelLoginTimes.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.labelLoginTimes.Location = new System.Drawing.Point(157, 279);
+            this.labelLoginTimes.Name = "labelLoginTimes";
+            this.labelLoginTimes.Size = new System.Drawing.Size(52, 42);
+            this.labelLoginTimes.TabIndex = 24;
+            this.labelLoginTimes.Text = "0";
+            this.labelLoginTimes.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.labelLoginTimes.Click += new System.EventHandler(this.labelLoginTimes_Click);
+            // 
+            // label4
+            // 
+            this.label4.BackColor = System.Drawing.SystemColors.Control;
+            this.label4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label4.Location = new System.Drawing.Point(46, 279);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(105, 42);
+            this.label4.TabIndex = 25;
+            this.label4.Text = "登录次数：";
+            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // label8
             // 
@@ -306,6 +306,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "Form1";
             this.Text = "ZQDB";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewInfo)).EndInit();
             this.ResumeLayout(false);
