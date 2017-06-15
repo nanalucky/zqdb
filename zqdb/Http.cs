@@ -141,6 +141,7 @@ namespace zqdb
         public void UpdateNonceStr(string strTest = "")
         {
             string strMd5 = strNonceStr.Substring(0, 32);
+            //string strMd5 = UserMd5(strClientToken).ToLower();
             string nonceStr;
             if (strTest.Length > 0)
             {
@@ -167,7 +168,7 @@ namespace zqdb
             return ((ulong)span.TotalMilliseconds).ToString();  
         }
 
-        private static string UserMd5(string str)
+        public static string UserMd5(string str)
         {
             string cl = str;
             string pwd = "";
@@ -178,7 +179,7 @@ namespace zqdb
             for (int i = 0; i < s.Length; i++)
             {
                 // 将得到的字符串使用十六进制类型格式。格式后的字符是小写的字母，如果使用大写（X）则格式后的字符是大写字符
-                pwd = pwd + s[i].ToString("X");
+                pwd = pwd + s[i].ToString("X2");
             }
             return pwd;
         }
@@ -642,6 +643,9 @@ namespace zqdb
         public static int nReloginInterval;
         public static int nLoginTimes = 1;
         public static bool bSetProxy = false;
+        public static string strApiVer = @"";
+        public static string strClientVer = @"";
+        public static string strClientType = @"";
         
         List<Player> listPlayer = new List<Player>();
 
@@ -654,12 +658,16 @@ namespace zqdb
             dtStartTime = DateTime.Parse((string)joInfo["StartTime"]);
             nNotReadNumInterval = (int)joInfo["NotReadNumInterval"];
             nReloginInterval = (int)joInfo["ReLoginInterval"];
+            strApiVer = (string)joInfo[HttpParam.APIVER];
+            strClientVer = (string)joInfo[HttpParam.CLIENTVER];
+            strClientType = (string)joInfo[HttpParam.CLIENTTYPE];
             if ((string)joInfo["SetProxy"] == @"0")
                 bSetProxy = false;
             else
                 bSetProxy = true;
             Program.form1.Form1_Init();
 
+/* 
             for (int i = 1; i < arrayText.Length; ++i)
             {
                 int startIndex = arrayText[i].IndexOf("=");
@@ -676,9 +684,42 @@ namespace zqdb
                 //player.thread.Start();
                 listPlayer.Add(player);
             }
+*/
+
+            int nInit = 2;
+            for (int i = nInit; i < arrayText.Length; ++i)
+            {
+                string[] arrayParam = arrayText[i].Split(new char[] { ',' }); 
+                Program.form1.dataGridViewInfo_AddRow(arrayParam[3]);
+
+                JObject joParam = new JObject(
+                    new JProperty(HttpParam.DEVICETOKEN, arrayParam[1]),
+                    new JProperty(HttpParam.CLIENTTYPE, AllPlayers.strClientType),
+                    new JProperty(HttpParam.USERID, @""),
+                    new JProperty(HttpParam.CLIENTTOKEN, arrayParam[2]),
+                    new JProperty(HttpParam.TIMESTAMP, @""),
+                    new JProperty(HttpParam.USERTOKEN, @""),
+                    new JProperty(HttpParam.NONCESTR, HttpParam.UserMd5(arrayParam[2]).ToLower()),
+                    new JProperty(HttpParam.APIVER, AllPlayers.strApiVer),
+                    new JProperty(HttpParam.CLIENTVER, AllPlayers.strClientVer),
+                    new JProperty(HttpParam.SIGN, @""),
+                    new JProperty(HttpParam.BODY, new JObject(
+                            new JProperty(HttpParam.PHONE, arrayParam[3]),
+                            new JProperty(HttpParam.PASSWORD, arrayParam[4])
+                        ))
+                    );
+
+                Player player = new Player();
+                player.nIndex = i - nInit;
+                player.joLoginParam = joParam;
+                player.strTelephone = (string)joParam[HttpParam.BODY]["phone"];
+                player.thread = new Thread(new ThreadStart(player.Run));
+                //player.thread.Start();
+                listPlayer.Add(player);
+            }
 
             Player.ClearConcertIdFinished();
-       }
+        }
 
 
         public void Run()

@@ -50,6 +50,9 @@ namespace zqdb
                 textBoxSetProxy.Text = "true";
             else
                 textBoxSetProxy.Text = "false";
+            textBoxApiVer.Text = AllPlayers.strApiVer;
+            textBoxClientType.Text = AllPlayers.strClientType;
+            textBoxClientVer.Text = AllPlayers.strClientVer;
 
             listBoxConcertIdPrices.Items.Clear();
             foreach (JObject joPrice in AllPlayers.jaConcert)
@@ -61,9 +64,9 @@ namespace zqdb
             dataGridViewInfo.Rows.Clear();
         }
 
-        public void dataGridViewInfo_AddRow(JObject joPlayer)
+        public void dataGridViewInfo_AddRow(string _phone)
         {
-            dataGridViewInfo.Rows.Add((string)joPlayer["body"]["phone"]);
+            dataGridViewInfo.Rows.Add(_phone);
         }        
 
         private void textBox1_TextChanged(object sender, EventArgs e)

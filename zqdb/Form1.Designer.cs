@@ -51,6 +51,12 @@
             this.label4 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.textBoxSetProxy = new System.Windows.Forms.TextBox();
+            this.label9 = new System.Windows.Forms.Label();
+            this.textBoxApiVer = new System.Windows.Forms.TextBox();
+            this.label10 = new System.Windows.Forms.Label();
+            this.textBoxClientVer = new System.Windows.Forms.TextBox();
+            this.label11 = new System.Windows.Forms.Label();
+            this.textBoxClientType = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewInfo)).BeginInit();
             this.SuspendLayout();
             // 
@@ -279,12 +285,75 @@
             this.textBoxSetProxy.TabIndex = 27;
             this.textBoxSetProxy.Text = "false";
             // 
+            // label9
+            // 
+            this.label9.BackColor = System.Drawing.SystemColors.Control;
+            this.label9.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label9.Location = new System.Drawing.Point(1007, 111);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(147, 42);
+            this.label9.TabIndex = 28;
+            this.label9.Text = "ApiVer";
+            this.label9.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // textBoxApiVer
+            // 
+            this.textBoxApiVer.Enabled = false;
+            this.textBoxApiVer.Location = new System.Drawing.Point(1175, 120);
+            this.textBoxApiVer.Name = "textBoxApiVer";
+            this.textBoxApiVer.Size = new System.Drawing.Size(84, 28);
+            this.textBoxApiVer.TabIndex = 29;
+            // 
+            // label10
+            // 
+            this.label10.BackColor = System.Drawing.SystemColors.Control;
+            this.label10.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label10.Location = new System.Drawing.Point(812, 177);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(147, 42);
+            this.label10.TabIndex = 30;
+            this.label10.Text = "ClientVer";
+            this.label10.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // textBoxClientVer
+            // 
+            this.textBoxClientVer.Enabled = false;
+            this.textBoxClientVer.Location = new System.Drawing.Point(980, 186);
+            this.textBoxClientVer.Name = "textBoxClientVer";
+            this.textBoxClientVer.Size = new System.Drawing.Size(84, 28);
+            this.textBoxClientVer.TabIndex = 31;
+            // 
+            // label11
+            // 
+            this.label11.BackColor = System.Drawing.SystemColors.Control;
+            this.label11.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label11.Location = new System.Drawing.Point(1112, 177);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(147, 42);
+            this.label11.TabIndex = 32;
+            this.label11.Text = "ClientType";
+            this.label11.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // textBoxClientType
+            // 
+            this.textBoxClientType.Enabled = false;
+            this.textBoxClientType.Location = new System.Drawing.Point(1279, 186);
+            this.textBoxClientType.Name = "textBoxClientType";
+            this.textBoxClientType.Size = new System.Drawing.Size(84, 28);
+            this.textBoxClientType.TabIndex = 33;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(1463, 889);
+            this.Controls.Add(this.textBoxClientType);
+            this.Controls.Add(this.label11);
+            this.Controls.Add(this.textBoxClientVer);
+            this.Controls.Add(this.label10);
+            this.Controls.Add(this.textBoxApiVer);
+            this.Controls.Add(this.label9);
             this.Controls.Add(this.textBoxSetProxy);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.label4);
@@ -339,6 +408,12 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn address;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.TextBox textBoxSetProxy;
+        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.TextBox textBoxApiVer;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.TextBox textBoxClientVer;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.TextBox textBoxClientType;
     }
 }
 
