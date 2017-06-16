@@ -261,7 +261,7 @@ namespace zqdb
                 http.Send(pmCityLibrary.GetParam());
 
                 WaitForResponse(ref http);
-                if (http.ResponseBody.Length > 0)
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
                 {
                     JObject joCityLibraryResult = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                     if ((string)joCityLibraryResult["code"] == @"0")
@@ -291,7 +291,7 @@ namespace zqdb
                     http.Send(pmNotReadNum.GetParam());
 
                     WaitForResponse(ref http);
-                    if (http.ResponseBody.Length > 0)
+                    if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
                     {
                         JObject joNotReadNumResult = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                         if ((string)joNotReadNumResult["code"] == @"0")
@@ -322,7 +322,7 @@ namespace zqdb
                     http.Send(pmPrices.GetParam());
 
                     WaitForResponse(ref http);
-                    if (http.ResponseBody.Length > 0)
+                    if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
                     {
                         //string ret = File.ReadAllText("prices_return.txt");
                         //joPricesReturn = (JObject)JsonConvert.DeserializeObject(ret);
@@ -399,7 +399,7 @@ namespace zqdb
                 http.Send(_param.GetParam());
 
                 WaitForResponse(ref http);
-                if (http.ResponseBody.Length > 0)
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
                 {
                     JObject joSectionOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                     if ((string)joSectionOrderReturn["code"] == @"0")
@@ -434,7 +434,7 @@ namespace zqdb
                 http.Send(pmLogin.GetParam());
 
                 WaitForResponse(ref http);
-                if (http.ResponseBody.Length > 0)
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
                 {
                     joLoginReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                     if ((string)joLoginReturn["code"] == @"0")
@@ -469,7 +469,7 @@ namespace zqdb
                     http.Send(pmAddressList.GetParam());
 
                     WaitForResponse(ref http);
-                    if (http.ResponseBody.Length > 0)
+                    if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
                     {
                         joAddressListReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                         if ((string)joAddressListReturn["code"] == @"0")
@@ -518,7 +518,7 @@ namespace zqdb
                     http.Send(pmMyOrder.GetParam());
 
                     WaitForResponse(ref http);
-                    if (http.ResponseBody.Length > 0)
+                    if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
                     {
                         joMyOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
                         if ((string)joMyOrderReturn["code"] == @"0")
@@ -541,7 +541,7 @@ namespace zqdb
                                         httpCancel.Send(pmCancel.GetParam());
 
                                         WaitForResponse(ref httpCancel);
-                                        if (httpCancel.ResponseBody.Length > 0)
+                                        if (httpCancel.ResponseBody.Length > 0 && httpCancel.ResponseBody.IndexOf(@"""code"":") >= 0)
                                         {
                                             joCancel = (JObject)JsonConvert.DeserializeObject(httpCancel.ResponseBody);
                                             JToken outMsg;
@@ -621,7 +621,7 @@ namespace zqdb
                 {
                     if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price)) 
                     {
-                        pmSectionOrder.joBody["goodsIds"] = string.Format("{0},{0},{0},{0}", price);
+                        pmSectionOrder.joBody["goodsIds"] = string.Format("{0},{0},{0},{0}", dc_ConcertId_dcPriceGoodId[nConcertId][price]);
                         HttpParam _pmSecitionOrder = new HttpParam(pmSectionOrder);
                         _pmSecitionOrder.joBody = new JObject(pmSectionOrder.joBody);
                         Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(_pmSecitionOrder)));
