@@ -210,8 +210,10 @@ namespace zqdb
 
     public class Player
     {
+        public static bool bCityLibraryApply = false;
         public static Dictionary<string, string> dcCityLibrary = new Dictionary<string, string>();
         public static bool bCityLibraryFinished = false;
+        public static bool bPricesApply = false;
         public static List<Thread> listPricesThread = new List<Thread>();
 
         HttpParam pmLogin;
@@ -377,7 +379,6 @@ namespace zqdb
                 thread.Abort();
             listPricesThread.Clear();
 
-
             ClearConcertIdFinished();
             dc_ConcertId_dcPriceGoodId.Clear();
 
@@ -426,6 +427,7 @@ namespace zqdb
             // login.action
             pmLogin = new HttpParam(joLoginParam);
             JObject joLoginReturn = new JObject();
+            int nTimes = 0;
             while (true)
             {
                 DxWinHttp http = new DxWinHttp();
@@ -442,6 +444,12 @@ namespace zqdb
                         break;
                     }
                 }
+                nTimes++;
+                if (nTimes >= 10)
+                {
+                    Program.form1.UpdateDataGridView(strTelephone, Column.Login, "放弃");
+                    return;
+                }
             }
             pmLogin.strUserId = (string)joLoginReturn["data"][HttpParam.USERID];
             pmLogin.strUserToken = (string)joLoginReturn["data"][HttpParam.USERTOKEN];
@@ -453,7 +461,17 @@ namespace zqdb
             if (AllPlayers.nLoginTimes == 1)
             {
                 // CityLibrary.action
-                if (nIndex == 0)
+                bool bNeedGetCityLibrary = false;
+                lock (this)
+                {
+                    if (!bCityLibraryApply)
+                    {
+                        bNeedGetCityLibrary = true;
+                        bCityLibraryApply = true;
+                    }
+                }
+
+                if (bNeedGetCityLibrary)
                 {
                     GetCityLibrary();
                 } 
@@ -560,7 +578,16 @@ namespace zqdb
             }
 
             // Prices.action
-            if (nIndex == 0)
+            bool bNeedGetPrices = false;
+            lock (this)
+            {
+                if (!bPricesApply)
+                {
+                    bNeedGetPrices = true;
+                    bPricesApply = true;
+                }
+            }
+            if (bNeedGetPrices)
             {
                 SendPricesWithThread();
             }
@@ -740,8 +767,9 @@ namespace zqdb
         void Relogin()
         {
             nLoginTimes = nLoginTimes + 1;
-            Program.form1.UpdateLoginTimes(); 
-            
+            Program.form1.UpdateLoginTimes();
+            Player.bPricesApply = false;
+
             foreach (Player player in listPlayer)
             {
                 player.thread.Abort();
