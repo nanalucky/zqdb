@@ -677,14 +677,28 @@ namespace zqdb
         public static string strApiVer = @"";
         public static string strClientVer = @"";
         public static string strClientType = @"";
+        public static string strConfigFileName = @"";
+        public static string strAccountFileName = @"";
         
         List<Player> listPlayer = new List<Player>();
 
-        public void Init(string strFileName)
+        public void Init()
         {
-            string[] arrayText = File.ReadAllLines(strFileName);
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            DirectoryInfo folderDesktop = new DirectoryInfo(desktop);
+            foreach(FileInfo NextFile in folderDesktop.GetFiles())
+            {
+                if (string.Equals(NextFile.Extension, ".txt", StringComparison.OrdinalIgnoreCase))
+                    strConfigFileName = NextFile.DirectoryName + @"\" + NextFile.Name;
 
-            JObject joInfo = (JObject)JsonConvert.DeserializeObject(arrayText[0]);
+                if (string.Equals(NextFile.Extension, ".csv", StringComparison.OrdinalIgnoreCase))
+                    strAccountFileName = NextFile.DirectoryName + @"\" + NextFile.Name;
+            }
+
+            string[] arrayConfig = File.ReadAllLines(strConfigFileName);
+            string[] arrayText = File.ReadAllLines(strAccountFileName);
+
+            JObject joInfo = (JObject)JsonConvert.DeserializeObject(arrayConfig[0]);
             jaConcert = (JArray)joInfo["list"];
             dtStartTime = DateTime.Parse((string)joInfo["StartTime"]);
             nNotReadNumInterval = (int)joInfo["NotReadNumInterval"];
@@ -717,7 +731,7 @@ namespace zqdb
             }
 */
 
-            int nInit = 2;
+            int nInit = 1;
             for (int i = nInit; i < arrayText.Length; ++i)
             {
                 string[] arrayParam = arrayText[i].Split(new char[] { ',' }); 

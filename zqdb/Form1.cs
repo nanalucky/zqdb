@@ -38,11 +38,15 @@ namespace zqdb
 
         private void button1_Click(object sender, EventArgs e)
         {
+            buttonRun.Enabled = false;
+            allPlayers.Init();
             allPlayers.Run();
         }
 
         public void Form1_Init()
         {
+            textBoxConfig.Text = AllPlayers.strConfigFileName;
+            textBoxAccount.Text = AllPlayers.strAccountFileName;
             textBoxStartTime.Text = AllPlayers.dtStartTime.ToShortTimeString();
             textBoxReloginInterval.Text = Convert.ToString(AllPlayers.nReloginInterval);
             textBoxNotReadNumInterval.Text = Convert.ToString(AllPlayers.nNotReadNumInterval);
@@ -58,7 +62,7 @@ namespace zqdb
             foreach (JObject joPrice in AllPlayers.jaConcert)
             {
                 string strItem;
-                strItem = (string)joPrice["ConcertId"] + @":" + (string)joPrice["Prices"];
+                strItem = (string)joPrice["ConcertId"] + @":" + (string)joPrice["GoodsIdNum"] + @":" + (string)joPrice["Prices"];
                 listBoxConcertIdPrices.Items.Add(strItem);
             }
             dataGridViewInfo.Rows.Clear();
@@ -74,18 +78,6 @@ namespace zqdb
 
         }
 
-        private void buttonFileName_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog fileDialog = new OpenFileDialog();
-            fileDialog.DefaultExt = ".txt";
-            fileDialog.Filter = "txt files(*.txt)|*.txt";
-            DialogResult result = fileDialog.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                textBoxFileName.Text = fileDialog.FileName;
-                allPlayers.Init(textBoxFileName.Text);
-            }
-        }
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {

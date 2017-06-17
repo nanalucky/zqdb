@@ -29,8 +29,6 @@
         private void InitializeComponent()
         {
             this.buttonRun = new System.Windows.Forms.Button();
-            this.textBoxFileName = new System.Windows.Forms.TextBox();
-            this.buttonFileName = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.textBoxNotReadNumInterval = new System.Windows.Forms.TextBox();
@@ -57,36 +55,20 @@
             this.textBoxClientVer = new System.Windows.Forms.TextBox();
             this.label11 = new System.Windows.Forms.Label();
             this.textBoxClientType = new System.Windows.Forms.TextBox();
+            this.textBoxConfig = new System.Windows.Forms.TextBox();
+            this.textBoxAccount = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewInfo)).BeginInit();
             this.SuspendLayout();
             // 
             // buttonRun
             // 
-            this.buttonRun.Location = new System.Drawing.Point(812, 41);
+            this.buttonRun.Location = new System.Drawing.Point(46, 30);
             this.buttonRun.Name = "buttonRun";
-            this.buttonRun.Size = new System.Drawing.Size(147, 42);
+            this.buttonRun.Size = new System.Drawing.Size(147, 62);
             this.buttonRun.TabIndex = 0;
             this.buttonRun.Text = "运行";
             this.buttonRun.UseVisualStyleBackColor = true;
             this.buttonRun.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // textBoxFileName
-            // 
-            this.textBoxFileName.Location = new System.Drawing.Point(218, 50);
-            this.textBoxFileName.Name = "textBoxFileName";
-            this.textBoxFileName.Size = new System.Drawing.Size(525, 28);
-            this.textBoxFileName.TabIndex = 1;
-            this.textBoxFileName.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
-            // 
-            // buttonFileName
-            // 
-            this.buttonFileName.Location = new System.Drawing.Point(46, 41);
-            this.buttonFileName.Name = "buttonFileName";
-            this.buttonFileName.Size = new System.Drawing.Size(147, 42);
-            this.buttonFileName.TabIndex = 2;
-            this.buttonFileName.Text = "参数文件...";
-            this.buttonFileName.UseVisualStyleBackColor = true;
-            this.buttonFileName.Click += new System.EventHandler(this.buttonFileName_Click);
             // 
             // label1
             // 
@@ -342,12 +324,30 @@
             this.textBoxClientType.Size = new System.Drawing.Size(84, 28);
             this.textBoxClientType.TabIndex = 33;
             // 
+            // textBoxConfig
+            // 
+            this.textBoxConfig.Enabled = false;
+            this.textBoxConfig.Location = new System.Drawing.Point(218, 30);
+            this.textBoxConfig.Name = "textBoxConfig";
+            this.textBoxConfig.Size = new System.Drawing.Size(525, 28);
+            this.textBoxConfig.TabIndex = 34;
+            // 
+            // textBoxAccount
+            // 
+            this.textBoxAccount.Enabled = false;
+            this.textBoxAccount.Location = new System.Drawing.Point(218, 64);
+            this.textBoxAccount.Name = "textBoxAccount";
+            this.textBoxAccount.Size = new System.Drawing.Size(525, 28);
+            this.textBoxAccount.TabIndex = 35;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(1463, 889);
+            this.Controls.Add(this.textBoxAccount);
+            this.Controls.Add(this.textBoxConfig);
             this.Controls.Add(this.textBoxClientType);
             this.Controls.Add(this.label11);
             this.Controls.Add(this.textBoxClientVer);
@@ -369,8 +369,6 @@
             this.Controls.Add(this.textBoxNotReadNumInterval);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.buttonFileName);
-            this.Controls.Add(this.textBoxFileName);
             this.Controls.Add(this.buttonRun);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "Form1";
@@ -386,8 +384,6 @@
         #endregion
 
         private System.Windows.Forms.Button buttonRun;
-        private System.Windows.Forms.TextBox textBoxFileName;
-        private System.Windows.Forms.Button buttonFileName;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBoxNotReadNumInterval;
@@ -414,6 +410,8 @@
         private System.Windows.Forms.TextBox textBoxClientVer;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.TextBox textBoxClientType;
+        private System.Windows.Forms.TextBox textBoxConfig;
+        private System.Windows.Forms.TextBox textBoxAccount;
     }
 }
 
