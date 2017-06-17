@@ -636,6 +636,10 @@ namespace zqdb
             foreach (JObject joPrice in AllPlayers.jaConcert)
             {
                 int nConcertId = (int)joPrice["ConcertId"];
+                int nGoodsIdNum = (int)joPrice["GoodsIdNum"];
+                string strGoodsIds = "{0}";
+                for (int i = 1; i < nGoodsIdNum; i++)
+                    strGoodsIds = strGoodsIds + ",{0}";
                 string strPrices = (string)joPrice["Prices"];
                 string[] arrayPrices = strPrices.Split(new Char[] { ',', ' ', ';' });
                 while(!dc_ConcertId_Finished[nConcertId])
@@ -648,7 +652,7 @@ namespace zqdb
                 {
                     if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price)) 
                     {
-                        pmSectionOrder.joBody["goodsIds"] = string.Format("{0},{0}", dc_ConcertId_dcPriceGoodId[nConcertId][price]);
+                        pmSectionOrder.joBody["goodsIds"] = string.Format(strGoodsIds, dc_ConcertId_dcPriceGoodId[nConcertId][price]);
                         HttpParam _pmSecitionOrder = new HttpParam(pmSectionOrder);
                         _pmSecitionOrder.joBody = new JObject(pmSectionOrder.joBody);
                         Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(_pmSecitionOrder)));
