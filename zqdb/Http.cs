@@ -392,6 +392,7 @@ namespace zqdb
 
         void SendSectionOrder(HttpParam _param)
         {
+            DateTime timeStart = DateTime.Now;
             while (true)
             {
                 DxWinHttp http = new DxWinHttp();
@@ -411,8 +412,16 @@ namespace zqdb
 
                     JToken outMsg;
                     if (joSectionOrderReturn.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
-                    { 
-                        break;
+                    {
+                        if (AllPlayers.nLoginTimes == 1)
+                            break;
+
+                        if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
+                            break;
+                        else
+                        {
+                            Thread.Sleep((new Random()).Next(10000, 15000));
+                        }
                     }
                 }
             } 
@@ -786,7 +795,7 @@ namespace zqdb
         {
             nLoginTimes = nLoginTimes + 1;
             Program.form1.UpdateLoginTimes();
-            Player.bPricesApply = false;
+            //Player.bPricesApply = false;
 
             foreach (Player player in listPlayer)
             {
