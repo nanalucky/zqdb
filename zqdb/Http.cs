@@ -414,7 +414,10 @@ namespace zqdb
                     if (joSectionOrderReturn.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
                     {
                         if (AllPlayers.nLoginTimes == 1)
-                            break;
+                        {
+                            if ((int)((DateTime.Now - timeStart).TotalSeconds) > 60)
+                                break;
+                        }                            
 
                         if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
                             break;
