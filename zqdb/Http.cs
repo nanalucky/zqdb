@@ -415,16 +415,26 @@ namespace zqdb
                     {
                         if (AllPlayers.nLoginTimes == 1)
                         {
-                            if ((int)((DateTime.Now - timeStart).TotalSeconds) > 60)
+                            if (string.Compare((string)joSectionOrderReturn["msg"], @"访问频率太频繁") == 0)
+                            {
                                 break;
-                        }                            
-
-                        if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
-                            break;
-                        else
-                        {
-                            Thread.Sleep((new Random()).Next(10000, 15000));
+                            }
+                            else if ((int)((DateTime.Now - timeStart).TotalSeconds) > 60)
+                            {
+                                break;
+                            }
                         }
+                        else 
+                        {
+                            if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
+                            {
+                                break;
+                            }
+                            else if (string.Compare((string)joSectionOrderReturn["msg"], @"访问频率太频繁") == 0)
+                            {
+                                Thread.Sleep(60000);
+                            }
+                        }    
                     }
                 }
             } 
