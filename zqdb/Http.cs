@@ -502,6 +502,11 @@ namespace zqdb
                         if ((string)joAddressListReturn["code"] == @"0")
                         {
                             JArray jaAddressList = (JArray)joAddressListReturn["data"]["list"];
+                            if (jaAddressList.Count <= 0)
+                            {
+                                Program.form1.UpdateDataGridView(strTelephone, Column.Address, @"null");
+                                return;
+                            }
                             joAddress = new JObject();
                             foreach (JObject addr in jaAddressList)
                             {
