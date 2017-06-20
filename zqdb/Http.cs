@@ -650,13 +650,13 @@ namespace zqdb
             JObject joSectionOrder = new JObject();
 
             pmSectionOrder.joBody = new JObject(
-                new JProperty("address", strAddress),
-                new JProperty("contact", (string)joAddress["name"]),
-                new JProperty("provinceCode", (string)joAddress["provinceCode"]),
                 new JProperty("addressId", (string)joAddress["addressId"]),
+                new JProperty("address", strAddress),
                 new JProperty("phone", (string)joAddress["phone"]),
                 new JProperty("goodsIds", @" "),
-                new JProperty("concertId", @" ")
+                new JProperty("concertId", @" "),
+                new JProperty("contact", (string)joAddress["name"]),
+                new JProperty("provinceCode", (string)joAddress["provinceCode"])
                 );
 
             List<Thread> listThread = new List<Thread>();
