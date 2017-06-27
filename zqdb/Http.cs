@@ -411,6 +411,7 @@ namespace zqdb
                 }
             }
 
+/*
             JObject joAddressListForOrderReturn = new JObject();
             while (true)
             {
@@ -429,8 +430,7 @@ namespace zqdb
                     }
                 }
             }
-
-            int nTimes = 3;
+*/
             while (true)
             {
                 DxWinHttp http = new DxWinHttp();
@@ -451,9 +451,7 @@ namespace zqdb
                     JToken outMsg;
                     if (joSectionOrderReturn.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
                     {
-                        nTimes--;
-                        if(nTimes <= 0)
-                            break;
+                        break;
                     }
                 }
             } 
@@ -706,6 +704,7 @@ namespace zqdb
                 for (int i = 0; i < arrayPrices.Length; i++)
                 {
                     string price = arrayPrices[(i + nStart) % arrayPrices.Length];
+                    //Console.WriteLine(string.Format("SectionOrder:{0},{1},{2},{3}", arrayPrices.Length, nIndex, (i + nStart) % arrayPrices.Length, price));
                     if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price))
                     {
                         pmOrderInfo.joBody["goodsIds"] = string.Format(strGoodsIds, dc_ConcertId_dcPriceGoodId[nConcertId][price]);
