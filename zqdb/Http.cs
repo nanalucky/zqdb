@@ -390,8 +390,46 @@ namespace zqdb
             }
         }
 
-        void SendSectionOrder(HttpParam _param)
+        void SendSectionOrder(HttpParam _pmOrderInfo, HttpParam _pmAddressListForOrder, HttpParam _param)
         {
+            JObject joOrderInfoReturn = new JObject();
+            while (true)
+            {
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", HttpParam.URL + @"ticket/orderInfo.action", true);
+                SetHttpRequestHeader(ref http, _pmOrderInfo.GetSign());
+                http.Send(_pmOrderInfo.GetParam());
+
+                WaitForResponse(ref http);
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
+                {
+                    joOrderInfoReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joOrderInfoReturn["code"] == @"0")
+                    {
+                        break;
+                    }
+                }
+            }
+
+            JObject joAddressListForOrderReturn = new JObject();
+            while (true)
+            {
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", HttpParam.URL + @"address/addressList.action", true);
+                SetHttpRequestHeader(ref http, _pmAddressListForOrder.GetSign());
+                http.Send(_pmAddressListForOrder.GetParam());
+
+                WaitForResponse(ref http);
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
+                {
+                    joAddressListForOrderReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joAddressListForOrderReturn["code"] == @"0")
+                    {
+                        break;
+                    }
+                }
+            }           
+ 
             DateTime timeStart = DateTime.Now;
             while (true)
             {
@@ -647,8 +685,6 @@ namespace zqdb
             
             // sectionOrder.action
             HttpParam pmSectionOrder = new HttpParam(pmLogin);
-            JObject joSectionOrder = new JObject();
-
             pmSectionOrder.joBody = new JObject(
                 new JProperty("addressId", (string)joAddress["addressId"]),
                 new JProperty("address", strAddress),
@@ -659,6 +695,15 @@ namespace zqdb
                 new JProperty("provinceCode", (string)joAddress["provinceCode"])
                 );
 
+            HttpParam pmOrderInfo = new HttpParam(pmLogin);
+            pmOrderInfo.joBody = new JObject(
+                new JProperty("goodsIds", @" "),
+                new JProperty("concertId", @" ")
+                );
+
+            HttpParam pmAddressListForOrder = new HttpParam(pmLogin);
+            pmAddressListForOrder.joBody = new JObject(); 
+            
             List<Thread> listThread = new List<Thread>();
             foreach (JObject joPrice in AllPlayers.jaConcert)
             {
@@ -674,15 +719,21 @@ namespace zqdb
                     Thread.Sleep(1);
                 }
 
+                pmOrderInfo.joBody["concertId"] = Convert.ToString(nConcertId);
                 pmSectionOrder.joBody["concertId"] = Convert.ToString(nConcertId);
                 foreach (string price in arrayPrices)
                 {
                     if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price)) 
                     {
+                        pmOrderInfo.joBody["goodsIds"] = string.Format(strGoodsIds, dc_ConcertId_dcPriceGoodId[nConcertId][price]);
                         pmSectionOrder.joBody["goodsIds"] = string.Format(strGoodsIds, dc_ConcertId_dcPriceGoodId[nConcertId][price]);
                         HttpParam _pmSecitionOrder = new HttpParam(pmSectionOrder);
                         _pmSecitionOrder.joBody = new JObject(pmSectionOrder.joBody);
-                        Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(_pmSecitionOrder)));
+                        HttpParam _pmOrderInfo = new HttpParam(pmOrderInfo);
+                        _pmOrderInfo.joBody = new JObject(pmOrderInfo.joBody);
+                        HttpParam _pmAddressListForOrder = new HttpParam(pmAddressListForOrder);
+                        _pmAddressListForOrder.joBody = new JObject(pmAddressListForOrder.joBody);
+                        Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(_pmOrderInfo, _pmAddressListForOrder, _pmSecitionOrder)));
                         threadSectionOrder.Start();
                         listThread.Add(threadSectionOrder);
                     }
