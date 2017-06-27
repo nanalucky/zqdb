@@ -428,9 +428,9 @@ namespace zqdb
                         break;
                     }
                 }
-            }           
- 
-            DateTime timeStart = DateTime.Now;
+            }
+
+            int nTimes = 3;
             while (true)
             {
                 DxWinHttp http = new DxWinHttp();
@@ -451,28 +451,9 @@ namespace zqdb
                     JToken outMsg;
                     if (joSectionOrderReturn.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
                     {
-                        if (AllPlayers.nLoginTimes == 1)
-                        {
-                            if (string.Compare((string)joSectionOrderReturn["msg"], @"访问频率太频繁") == 0)
-                            {
-                                break;
-                            }
-                            else if ((int)((DateTime.Now - timeStart).TotalSeconds) > 60)
-                            {
-                                break;
-                            }
-                        }
-                        else 
-                        {
-                            if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
-                            {
-                                break;
-                            }
-                            else if (string.Compare((string)joSectionOrderReturn["msg"], @"访问频率太频繁") == 0)
-                            {
-                                Thread.Sleep(60000);
-                            }
-                        }    
+                        nTimes--;
+                        if(nTimes <= 0)
+                            break;
                     }
                 }
             } 
@@ -721,9 +702,11 @@ namespace zqdb
 
                 pmOrderInfo.joBody["concertId"] = Convert.ToString(nConcertId);
                 pmSectionOrder.joBody["concertId"] = Convert.ToString(nConcertId);
-                foreach (string price in arrayPrices)
+                int nStart = nIndex % arrayPrices.Length;
+                for (int i = 0; i < arrayPrices.Length; i++)
                 {
-                    if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price)) 
+                    string price = arrayPrices[(i + nStart) % arrayPrices.Length];
+                    if (dc_ConcertId_dcPriceGoodId.ContainsKey(nConcertId) && dc_ConcertId_dcPriceGoodId[nConcertId].ContainsKey(price))
                     {
                         pmOrderInfo.joBody["goodsIds"] = string.Format(strGoodsIds, dc_ConcertId_dcPriceGoodId[nConcertId][price]);
                         pmSectionOrder.joBody["goodsIds"] = string.Format(strGoodsIds, dc_ConcertId_dcPriceGoodId[nConcertId][price]);
@@ -733,14 +716,10 @@ namespace zqdb
                         _pmOrderInfo.joBody = new JObject(pmOrderInfo.joBody);
                         HttpParam _pmAddressListForOrder = new HttpParam(pmAddressListForOrder);
                         _pmAddressListForOrder.joBody = new JObject(pmAddressListForOrder.joBody);
-                        Thread threadSectionOrder = new Thread(new ThreadStart(() => SendSectionOrder(_pmOrderInfo, _pmAddressListForOrder, _pmSecitionOrder)));
-                        threadSectionOrder.Start();
-                        listThread.Add(threadSectionOrder);
-                    }
-
+                        SendSectionOrder(_pmOrderInfo, _pmAddressListForOrder, _pmSecitionOrder);
+                    }                
                 }
-            } 
-
+            }
         }
     };
 
