@@ -63,6 +63,9 @@ namespace zqdb
             {
                 string strItem;
                 strItem = (string)joPrice["ConcertId"] + @":" + (string)joPrice["GoodsIdNum"] + @":" + (string)joPrice["Prices"];
+                JToken outGoodsId;
+                if (joPrice.TryGetValue("GoodsId", out outGoodsId))
+                    strItem = strItem + @":" + (string)joPrice["GoodsId"];
                 listBoxConcertIdPrices.Items.Add(strItem);
             }
             dataGridViewInfo.Rows.Clear();
