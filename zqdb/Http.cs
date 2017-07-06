@@ -14,7 +14,7 @@ namespace zqdb
 {
     public class HttpParam
     {
-        public const string URL = @"https://api.expop.com.cn/v3/app/";
+        public const string URL = @"https://ypapi.expop.com.cn/v3/app/";
 
         public const string KEY = @"key";
         public const string DEVICETOKEN = @"deviceToken";
@@ -31,7 +31,7 @@ namespace zqdb
         public const string PASSWORD = @"password";
         public const string NONCESTR = @"nonceStr";
 
-        string strKey = @"ae973b8d-64f3-42e4-8f3f-b93d76f5924f";
+        string strKey = @"40389d43-5823-4e4d-be5f-d6e94e45d73f";
         string strAnd = @"&";
         string strEqual = @"=";
 
@@ -107,8 +107,8 @@ namespace zqdb
 
         public string GetSign()
         {
-            //strTimeStamp = @"1496512106741";
-            //UpdateNonceStr(@"214748364773698");
+            //strTimeStamp = @"1499351014715";
+            //UpdateNonceStr(@"214748364749589");
             strTimeStamp = Timestamp();
             UpdateNonceStr();
             strSign = GetMd5();
@@ -145,7 +145,7 @@ namespace zqdb
             string nonceStr;
             if (strTest.Length > 0)
             {
-                nonceStr = string.Format("%s%s", strMd5, strTest);
+                nonceStr = string.Format("{0}{1}", strMd5, strTest);
             }
             else 
             {
@@ -234,7 +234,7 @@ namespace zqdb
                 _http.SetProxy(2, "127.0.0.1:8888", "0");
 
             _http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            _http.SetRequestHeader("Host", "api.expop.com.cn");
+            _http.SetRequestHeader("Host", "ypapi.expop.com.cn");
             //_http.SetRequestHeader("Connection", "Keep-Alive");
             _http.SetRequestHeader("Accept-Encoding", "gzip");
             _http.SetRequestHeader("User-Agent", "okhttp/3.4.1");
