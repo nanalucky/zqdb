@@ -194,5 +194,20 @@ namespace DxComOperate
             if (obj != null) { return obj.ToString(); }
             else return "True";
         }
+
+        public string GetAllResponseHeaders()
+        {
+            try
+            {
+                object obj;
+                obj = HttpObj["GetAllResponseHeaders"];
+                if (obj != null) { return obj.ToString(); }
+                else return @"";
+            }
+            catch
+            {
+                return @"";
+            }
+        }
     }
 }

@@ -250,7 +250,7 @@ namespace zqdb
                 _http.WaitForResponse(1, out succeeded);
                 if (_http.ResponseBody.Length > 0)
                     break;
-                if ((int)((DateTime.Now - timeStart).TotalSeconds) > 1800)
+                if ((int)((DateTime.Now - timeStart).TotalSeconds) > 30)
                     break;
             }
             return true;
