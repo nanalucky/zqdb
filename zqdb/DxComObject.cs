@@ -86,19 +86,27 @@ namespace DxComOperate
             {
                 if (_Active)
                 {
-                    if (HttpObj["ResponseBody"] != null)
+                    try
                     {
-                        DxComObject AdoStream = new DxComObject("Adodb.Stream");
-                        AdoStream["Type"] = 1;
-                        AdoStream["Mode"] = 3;
-                        AdoStream.DoMethod("Open", new object[] { });
-                        AdoStream.DoMethod("Write", new object[1] { HttpObj["ResponseBody"] });
-                        AdoStream["Position"] = 0;
-                        AdoStream["Type"] = 2;
-                        AdoStream["Charset"] = "UTF-8";
-                        return AdoStream["ReadText"].ToString();
+                        if (HttpObj["ResponseBody"] != null)
+                        {
+                            DxComObject AdoStream = new DxComObject("Adodb.Stream");
+                            AdoStream["Type"] = 1;
+                            AdoStream["Mode"] = 3;
+                            AdoStream.DoMethod("Open", new object[] { });
+                            AdoStream.DoMethod("Write", new object[1] { HttpObj["ResponseBody"] });
+                            AdoStream["Position"] = 0;
+                            AdoStream["Type"] = 2;
+                            AdoStream["Charset"] = "UTF-8";
+                            return AdoStream["ReadText"].ToString();
+                        }
+                        else
+                            return "";
                     }
-                    else return "";
+                    catch 
+                    {
+                        return "";
+                    }
                 }
                 else return "";
             }
@@ -125,7 +133,7 @@ namespace DxComOperate
             }
             else
             {
-               _Active = true;
+                _Active = true;
                 return "True";
             }
         }
@@ -193,6 +201,21 @@ namespace DxComOperate
             obj = HttpObj.DoMethod("SetProxy", new object[3] { ProxySetting, ProxyServer, BypassList });
             if (obj != null) { return obj.ToString(); }
             else return "True";
+        }
+
+        public string GetAllResponseHeaders()
+        {
+            try
+            {
+                object obj;
+                obj = HttpObj["GetAllResponseHeaders"];
+                if (obj != null) { return obj.ToString(); }
+                else return @"";
+            }
+            catch
+            {
+                return @"";
+            }
         }
     }
 }

@@ -145,7 +145,7 @@ namespace zqdb
             string nonceStr;
             if (strTest.Length > 0)
             {
-                nonceStr = string.Format("%s%s", strMd5, strTest);
+                nonceStr = string.Format("{0}{1}", strMd5, strTest);
             }
             else 
             {
@@ -250,7 +250,7 @@ namespace zqdb
                 _http.WaitForResponse(1, out succeeded);
                 if (_http.ResponseBody.Length > 0)
                     break;
-                if ((int)((DateTime.Now - timeStart).TotalSeconds) > 1800)
+                if ((int)((DateTime.Now - timeStart).TotalSeconds) > 30)
                     break;
             }
             return true;
@@ -521,6 +521,8 @@ namespace zqdb
                     else
                         Thread.Sleep(60000);
                 }
+
+                nIndex = 0;
             }
 
             if (listHttp.Count > 0)
