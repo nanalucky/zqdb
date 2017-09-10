@@ -8,7 +8,8 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Security.Cryptography;
-using System.Threading; 
+using System.Threading;
+using System.Windows.Forms;
 
 namespace zqdb
 {
@@ -210,7 +211,7 @@ namespace zqdb
 
     public class Player
     {
-        
+       
         void SetHttpRequestHeader(DxWinHttp _http, string _sign)
         {
             if(AllPlayers.bSetProxy)
@@ -242,10 +243,21 @@ namespace zqdb
  
         public void Run()
         {
-            HttpParam pmCommitGameResult = new HttpParam(AllPlayers.strParam);
-            pmCommitGameResult.joBody["score"] = Program.form1.textBoxScore_GetScore();
+            JObject paramSignature = (JObject)JsonConvert.DeserializeObject(AllPlayers.strParamSignature);
+            string signature = (string)paramSignature["data"]["signature"];
+            HttpParam pmGetGameSign = new HttpParam(AllPlayers.strParam);
+            int type = (int)pmGetGameSign.joBody["type"];
+            int userTime = (new Random()).Next(14000, 15000);
 
-            string signature = (string)pmCommitGameResult.joBody["signature"];
+            HttpParam pmCommitGameResult = new HttpParam(AllPlayers.strParam);
+            pmCommitGameResult.joBody = new JObject(
+                    new JProperty("type", type),
+                    new JProperty("useTime", userTime),
+                    new JProperty("signature", signature),
+                    new JProperty("score", int.Parse(Program.form1.textBoxScore_GetScore()))
+                    );
+
+            // 检查signature
             bool bFound = false;
             bool bHasLine = false;
             if (File.Exists(AllPlayers.strConfigFileName))
@@ -275,7 +287,7 @@ namespace zqdb
             StreamWriter sw = new StreamWriter(fs);
             if (bHasLine)
             {
-                sw.Write(string.Format("\n{0}", signature));
+                sw.Write(string.Format("\r\n{0}", signature));
             }
             else
             {
@@ -297,26 +309,36 @@ namespace zqdb
 
     class AllPlayers
     {
-        public static bool bSetProxy = true;
+        public static bool bSetProxy = false;
         public static string strConfigFileName = @"";
         public static string strAccountFileName = @"";
 
         public static string strParam = @"";
         public static string strUrl = @"";
+        public static string strParamSignature = @"";
 
         public void Init()
         {
+            if (Program.form1.textBoxSetProxy_GetProxy().Equals("0"))
+                bSetProxy = false;
+            else
+                bSetProxy = true;
+
             string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            DirectoryInfo folderDesktop = new DirectoryInfo(desktop);
-            foreach(FileInfo NextFile in folderDesktop.GetFiles())
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.InitialDirectory = desktop;
+            openFileDialog.Filter = "txt File(*.txt)|*.txt";
+            openFileDialog.RestoreDirectory = true;
+            openFileDialog.FilterIndex = 1;
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                if (string.Equals(NextFile.Extension, ".txt", StringComparison.OrdinalIgnoreCase))
-                {
-                    strAccountFileName = NextFile.DirectoryName + @"\" + NextFile.Name;
-                    strConfigFileName = NextFile.DirectoryName + @"\" + @"config.csv";
-                    break;
-                }
+                strAccountFileName = openFileDialog.FileName;
             }
+            else
+            {
+                return;
+            }
+            strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config.csv";
 
             string[] arrayText = File.ReadAllLines(strAccountFileName);
             for (int i = 0; i < arrayText.Length; ++i)
@@ -324,7 +346,11 @@ namespace zqdb
                 if (arrayText[i].IndexOf("params=") == 0)
                 {
                     strParam = arrayText[i];
-                    break;
+                }
+
+                if (arrayText[i].IndexOf("{\"code\":") == 0)
+                {
+                    strParamSignature = arrayText[i];
                 }
             }
             strUrl = @"game/commitGameResult.action";
@@ -335,8 +361,10 @@ namespace zqdb
 
         public void Run()
         {
+            if (strAccountFileName == "")
+                return;
 
-           Player player = new Player();
+            Player player = new Player();
             player.Run();
         }
    

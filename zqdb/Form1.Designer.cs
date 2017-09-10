@@ -33,6 +33,8 @@
             this.label1 = new System.Windows.Forms.Label();
             this.textBoxConfig = new System.Windows.Forms.TextBox();
             this.textBoxScore = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.textBoxSetProxy = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // buttonRun
@@ -80,12 +82,33 @@
             this.textBoxScore.TabIndex = 36;
             this.textBoxScore.Text = "0";
             // 
+            // label2
+            // 
+            this.label2.BackColor = System.Drawing.SystemColors.Control;
+            this.label2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label2.Location = new System.Drawing.Point(386, 111);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(147, 42);
+            this.label2.TabIndex = 37;
+            this.label2.Text = "SetProxy";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // textBoxSetProxy
+            // 
+            this.textBoxSetProxy.Location = new System.Drawing.Point(554, 120);
+            this.textBoxSetProxy.Name = "textBoxSetProxy";
+            this.textBoxSetProxy.Size = new System.Drawing.Size(100, 28);
+            this.textBoxSetProxy.TabIndex = 38;
+            this.textBoxSetProxy.Text = "0";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(871, 223);
+            this.Controls.Add(this.textBoxSetProxy);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.textBoxScore);
             this.Controls.Add(this.textBoxAccount);
             this.Controls.Add(this.textBoxConfig);
@@ -108,6 +131,8 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox textBoxConfig;
         private System.Windows.Forms.TextBox textBoxScore;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox textBoxSetProxy;
     }
 }
 

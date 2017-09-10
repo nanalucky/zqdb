@@ -45,6 +45,11 @@ namespace zqdb
             return textBoxScore.Text;
         }
 
+        public string textBoxSetProxy_GetProxy()
+        {
+            return textBoxSetProxy.Text;
+        }
+
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             Environment.Exit(0);
