@@ -283,6 +283,7 @@ namespace zqdb
                         bCityLibraryFinished = true;
                         break;
                     }
+
                 }
             }
         }
@@ -390,7 +391,7 @@ namespace zqdb
 
         void SendOrderInfo(ConsertInfo info)
         {
-            WaitToStart();
+            WaitToStart(2*60);
 
             HttpParam pmOrderInfo = new HttpParam(pmLogin);
             pmOrderInfo.joBody = new JObject(
@@ -433,16 +434,16 @@ namespace zqdb
                     SetHttpRequestHeader(http, pmOrderInfo.GetSign());
                     http.Send(pmOrderInfo.GetParam());
                 }
-                Thread.Sleep(1);
+                Thread.Sleep(10);
 
                 if (AllPlayers.nLoginTimes == 1)
                 {
-                    if ((int)((DateTime.Now - timeStart).TotalSeconds) > 60)
+                    if ((int)((DateTime.Now - timeStart).TotalSeconds) > 420)
                         break;
                 }
                 else
                 {
-                    if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
+                    if ((int)((DateTime.Now - timeStart).TotalSeconds) > 420)
                         break;
                 } 
             }
@@ -467,69 +468,57 @@ namespace zqdb
             DateTime timeStart = DateTime.Now;
             bool bValid = false;
             int nStart = 0;
-            int nIndex = 0;
             if (info.listGoodsId.Count > 0)
             {
                 nStart = nIndex % info.listGoodsId.Count;
                 pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[(nIndex + nStart) % info.listGoodsId.Count]);
-                nIndex++;
                 bValid = true;
             }
-
-            while(true)
+           
+            while (true)
             {
-                while (true)
+                if (bValid)
                 {
-                    if (bValid)
-                    {
-                        DxWinHttp http = new DxWinHttp();
-                        http.Open("POST", HttpParam.URL + @"ticket/sectionOrder.action", true);
-                        SetHttpRequestHeader(http, pmSectionOrder.GetSign());
-                        http.Send(pmSectionOrder.GetParam());
-                        listHttp.Add(http);
-                    }
+                    DxWinHttp http = new DxWinHttp();
+                    http.Open("POST", HttpParam.URL + @"ticket/sectionOrder.action", true);
+                    SetHttpRequestHeader(http, pmSectionOrder.GetSign());
+                    http.Send(pmSectionOrder.GetParam());
+                    listHttp.Add(http);
+                }
 
-                    Thread.Sleep(200);
-                    if (dc_ConcertId_Finished[info.nConcertId])
+                Thread.Sleep(1);
+                if (dc_ConcertId_Finished[info.nConcertId])
+                {
+                    pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, dc_ConcertId_dcPriceGoodId[info.nConcertId][info.arrayPrices[(nIndex + nStart) % info.arrayPrices.Length]]);
+                    bValid = true;
+                }
+                else
+                {
+                    if (info.listGoodsId.Count > 0)
                     {
-                        pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, dc_ConcertId_dcPriceGoodId[info.nConcertId][info.arrayPrices[(nIndex + nStart) % info.arrayPrices.Length]]);
-                        nIndex++;
+                        pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[(nIndex + nStart) % info.listGoodsId.Count]);
                         bValid = true;
                     }
-                    else
-                    {
-                        if (info.listGoodsId.Count > 0)
-                        {
-                            pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[(nIndex + nStart) % info.listGoodsId.Count]);
-                            nIndex++;
-                            bValid = true;
-                        }
-                    }
 
-                    if (nIndex > 25)
-                        break;
                 }
 
                 if (AllPlayers.nLoginTimes == 1)
                 {
-                    break;
+                    if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
+                        break;
                 }
                 else
                 {
                     if ((int)((DateTime.Now - timeStart).TotalSeconds) > 300)
                         break;
-                    else
-                        Thread.Sleep(60000);
-                }
-
-                nIndex = 0;
+                } 
             }
 
             if (listHttp.Count > 0)
             {
                 for (int i = 0; i < listHttp.Count; i++)
                 {
-                    WaitForResponse(listHttp[i]);
+                    //WaitForResponse(listHttp[i]);
                     if (listHttp[i].ResponseBody.Length > 0 && listHttp[i].ResponseBody.IndexOf(@"""code"":") >= 0)
                     {
                         JObject joSectionOrderReturn = (JObject)JsonConvert.DeserializeObject(listHttp[i].ResponseBody);
@@ -544,16 +533,18 @@ namespace zqdb
         }
 
 
-        void WaitToStart()
+        void WaitToStart(int nSecInAdvance=0)
         {
+            DateTime dtStartTime = AllPlayers.dtStartTime.AddSeconds(-1.0f * nSecInAdvance);
+
             // wait start time
-            while ((DateTime.Now < AllPlayers.dtStartTime))
+            while ((DateTime.Now < dtStartTime))
             {
-                if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 60000)
+                if ((dtStartTime - DateTime.Now).TotalMilliseconds > 60000)
                     Thread.Sleep(60000);
-                else if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 1000)
+                else if ((dtStartTime - DateTime.Now).TotalMilliseconds > 1000)
                     Thread.Sleep(1000);
-                else if ((AllPlayers.dtStartTime - DateTime.Now).TotalMilliseconds > 50)
+                else if ((dtStartTime - DateTime.Now).TotalMilliseconds > 50)
                     Thread.Sleep(50);
                 else
                     Thread.Sleep(1);
@@ -724,7 +715,7 @@ namespace zqdb
                 }              
             }
 
-            // Prices.action
+/*            // Prices.action
             bool bNeedGetPrices = false;
             lock (this)
             {
@@ -738,7 +729,7 @@ namespace zqdb
             {
                 SendPricesWithThread();
             }
-
+*/
             // notReadNum.action
             if (AllPlayers.nLoginTimes == 1)
             {
