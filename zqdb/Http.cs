@@ -434,7 +434,11 @@ namespace zqdb
                     SetHttpRequestHeader(http, pmOrderInfo.GetSign());
                     http.Send(pmOrderInfo.GetParam());
                 }
-                Thread.Sleep(10);
+
+                if (DateTime.Now < AllPlayers.dtStartTime)
+                    Thread.Sleep(500);
+                else
+                    Thread.Sleep(10);
 
                 if (AllPlayers.nLoginTimes == 1)
                 {
