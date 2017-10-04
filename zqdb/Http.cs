@@ -10,6 +10,8 @@ using Newtonsoft.Json.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Forms;
+using Fiddler;
+using FiddlerCore;
 
 namespace zqdb
 {
@@ -368,6 +370,111 @@ namespace zqdb
             player.Run();
         }
    
+    };
+
+    public class zqdbFiddler
+    {
+        static Proxy oSecureEndpoint;
+        static string sSecureEndpointHostname = "localhost";
+        static int iSecureEndpointPort = 7777;
+
+        
+        public static bool InstallCertificate()
+        {
+            if (!CertMaker.rootCertExists())
+            {
+                if (!CertMaker.createRootCert())
+                    return false;
+
+                if (!CertMaker.trustRootCert())
+                    return false;
+            }
+
+            return true;
+        }
+        
+        
+        public static void Init()
+        {
+            // <-- Personalize for your Application, 64 chars or fewer
+            Fiddler.FiddlerApplication.SetAppDisplayName("FiddlerCoreZQDB");
+            Fiddler.FiddlerApplication.OnNotification += delegate(object sender, NotificationEventArgs oNEA) { Program.form1.richTextBoxFiddler_AddString("** NotifyUser: " + oNEA.NotifyString + "\n"); };
+            Fiddler.FiddlerApplication.Log.OnLogString += delegate(object sender, LogEventArgs oLEA) { Program.form1.richTextBoxFiddler_AddString("** LogString: " + oLEA.LogString + "\n"); };
+
+            Fiddler.FiddlerApplication.BeforeRequest += delegate(Fiddler.Session oS)
+            {
+                // Console.WriteLine("Before request for:\t" + oS.fullUrl);
+                // In order to enable response tampering, buffering mode MUST
+                // be enabled; this allows FiddlerCore to permit modification of
+                // the response in the BeforeResponse handler rather than streaming
+                // the response to the client as the response comes in.
+                oS.bBufferResponse = false;
+
+                Fiddler.FiddlerApplication.Log.LogFormat("Request URL {0}", oS.fullUrl);// getting only http traffic details
+
+                // Set this property if you want FiddlerCore to automatically authenticate by
+                // answering Digest/Negotiate/NTLM/Kerberos challenges itself
+                // oS["X-AutoAuth"] = "(default)";
+
+                /* If the request is going to our secure endpoint, we'll echo back the response.
+                
+                Note: This BeforeRequest is getting called for both our main proxy tunnel AND our secure endpoint, 
+                so we have to look at which Fiddler port the client connected to (pipeClient.LocalPort) to determine whether this request 
+                was sent to secure endpoint, or was merely sent to the main proxy tunnel (e.g. a CONNECT) in order to *reach* the secure endpoint.
+
+                As a result of this, if you run the demo and visit https://localhost:7777 in your browser, you'll see
+
+                Session list contains...
+                 
+                    1 CONNECT http://localhost:7777
+                    200                                         <-- CONNECT tunnel sent to the main proxy tunnel, port 8877
+
+                    2 GET https://localhost:7777/
+                    200 text/html                               <-- GET request decrypted on the main proxy tunnel, port 8877
+
+                    3 GET https://localhost:7777/               
+                    200 text/html                               <-- GET request received by the secure endpoint, port 7777
+                */
+
+                if ((oS.oRequest.pipeClient.LocalPort == iSecureEndpointPort) && (oS.hostname == sSecureEndpointHostname))
+                {
+                    oS.utilCreateResponseAndBypassServer();
+                    oS.oResponse.headers.SetStatus(200, "Ok");
+                    oS.oResponse["Content-Type"] = "text/html; charset=UTF-8";
+                    oS.oResponse["Cache-Control"] = "private, max-age=0";
+                    oS.utilSetResponseBody("<html><body>Request for httpS://" + sSecureEndpointHostname + ":" + iSecureEndpointPort.ToString() + " received. Your request was:<br /><plaintext>" + oS.oRequest.headers.ToString());
+                }
+            };
+
+            Fiddler.CONFIG.IgnoreServerCertErrors = false;
+            FiddlerApplication.Prefs.SetBoolPref("fiddler.network.streaming.abortifclientaborts", true);
+            FiddlerCoreStartupFlags oFCSF = FiddlerCoreStartupFlags.Default;
+            oFCSF = (oFCSF | FiddlerCoreStartupFlags.AllowRemoteClients | FiddlerCoreStartupFlags.CaptureLocalhostTraffic | FiddlerCoreStartupFlags.CaptureFTP);
+
+            CONFIG.bCaptureCONNECT = true;
+            CONFIG.IgnoreServerCertErrors = true;
+            var cert = InstallCertificate();// getting true
+
+            int iPort = 8877;
+            Fiddler.FiddlerApplication.Startup(iPort, oFCSF);
+            FiddlerApplication.Log.LogFormat("Created endpoint listening on port {0}", iPort);
+
+            FiddlerApplication.Log.LogFormat("Starting with settings: [{0}]", oFCSF);
+            FiddlerApplication.Log.LogFormat("Gateway: {0}", CONFIG.UpstreamGateway.ToString());
+
+            oSecureEndpoint = FiddlerApplication.CreateProxyEndpoint(iSecureEndpointPort, true, sSecureEndpointHostname);
+            if (null != oSecureEndpoint)
+            {
+                FiddlerApplication.Log.LogFormat("Created secure endpoint listening on port {0}, using a HTTPS certificate for '{1}'", iSecureEndpointPort, sSecureEndpointHostname);
+            }
+        }
+
+
+        public static void doQuit()
+        {
+            if (null != oSecureEndpoint) oSecureEndpoint.Dispose();
+            Fiddler.FiddlerApplication.Shutdown();        
+        }
     };
      
 }

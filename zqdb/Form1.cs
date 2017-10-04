@@ -25,7 +25,7 @@ namespace zqdb
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            zqdbFiddler.Init();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -52,8 +52,26 @@ namespace zqdb
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
+            zqdbFiddler.doQuit();
             Environment.Exit(0);
         }
 
+        public delegate void DelegateRichTextBoxFiddler_AddString(string strAdd);
+        public void richTextBoxFiddler_AddString(string strAdd)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new DelegateRichTextBoxFiddler_AddString(richTextBoxFiddler_AddString), new object[] { strAdd });
+                return;
+            }
+
+
+            richTextBoxFiddler.Focus();
+            //设置光标的位置到文本尾   
+            richTextBoxFiddler.Select(richTextBoxFiddler.TextLength, 0);
+            //滚动到控件光标处   
+            richTextBoxFiddler.ScrollToCaret();
+            richTextBoxFiddler.AppendText(strAdd);
+        }
     }
 }

@@ -35,6 +35,8 @@
             this.textBoxScore = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.textBoxSetProxy = new System.Windows.Forms.TextBox();
+            this.richTextBoxFiddler = new System.Windows.Forms.RichTextBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // buttonRun
@@ -101,12 +103,33 @@
             this.textBoxSetProxy.TabIndex = 38;
             this.textBoxSetProxy.Text = "0";
             // 
+            // richTextBoxFiddler
+            // 
+            this.richTextBoxFiddler.Location = new System.Drawing.Point(46, 365);
+            this.richTextBoxFiddler.Name = "richTextBoxFiddler";
+            this.richTextBoxFiddler.Size = new System.Drawing.Size(697, 322);
+            this.richTextBoxFiddler.TabIndex = 39;
+            this.richTextBoxFiddler.Text = "";
+            // 
+            // label3
+            // 
+            this.label3.BackColor = System.Drawing.SystemColors.Control;
+            this.label3.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label3.Location = new System.Drawing.Point(46, 320);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(147, 42);
+            this.label3.TabIndex = 40;
+            this.label3.Text = "输出";
+            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(871, 223);
+            this.ClientSize = new System.Drawing.Size(871, 769);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.richTextBoxFiddler);
             this.Controls.Add(this.textBoxSetProxy);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.textBoxScore);
@@ -133,6 +156,8 @@
         private System.Windows.Forms.TextBox textBoxScore;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBoxSetProxy;
+        private System.Windows.Forms.RichTextBox richTextBoxFiddler;
+        private System.Windows.Forms.Label label3;
     }
 }
 
