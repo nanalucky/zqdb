@@ -12,6 +12,7 @@ using System.Threading;
 using System.Windows.Forms;
 using Fiddler;
 using FiddlerCore;
+using System.Diagnostics;
 
 namespace zqdb
 {
@@ -213,11 +214,17 @@ namespace zqdb
 
     public class Player
     {
+        public static Dictionary<string, Player> dicSignaturePlayer = new Dictionary<string, Player>();
+
+        public string signature = @"";
+        public int type = 0;
+        public int score = 0;
+        public int userTime = 0;
+        public string commitGameResultResponse = @"";
        
         void SetHttpRequestHeader(DxWinHttp _http, string _sign)
         {
-            if(AllPlayers.bSetProxy)
-                _http.SetProxy(2, "127.0.0.1:8888", "0");
+            _http.SetProxy(2, "127.0.0.1:8888", "0");
 
             _http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             _http.SetRequestHeader("Host", "api.expop.com.cn");
@@ -242,143 +249,75 @@ namespace zqdb
             return true;
         }
 
- 
-        public void Run()
+        public void response_getGameSign(Fiddler.Session oS)
         {
-            JObject paramSignature = (JObject)JsonConvert.DeserializeObject(AllPlayers.strParamSignature);
-            string signature = (string)paramSignature["data"]["signature"];
-            HttpParam pmGetGameSign = new HttpParam(AllPlayers.strParam);
-            int type = (int)pmGetGameSign.joBody["type"];
-            int userTime = (new Random()).Next(14000, 15000);
+            JObject paramSignature = (JObject)JsonConvert.DeserializeObject(oS.GetResponseBodyAsString());
+            signature = (string)paramSignature["data"]["signature"];
+            HttpParam pmGetGameSign = new HttpParam(oS.GetRequestBodyAsString());
+            type = (int)pmGetGameSign.joBody["type"];
+            userTime = (new Random()).Next(AllPlayers.dicTypeScore[type].minSecond * 1000, AllPlayers.dicTypeScore[type].maxSecond * 1000);
+            score = AllPlayers.dicTypeScore[type].score;
 
-            HttpParam pmCommitGameResult = new HttpParam(AllPlayers.strParam);
+            HttpParam pmCommitGameResult = new HttpParam(oS.GetRequestBodyAsString());
             pmCommitGameResult.joBody = new JObject(
                     new JProperty("type", type),
                     new JProperty("useTime", userTime),
                     new JProperty("signature", signature),
-                    new JProperty("score", int.Parse(Program.form1.textBoxScore_GetScore()))
+                    new JProperty("score", score)
                     );
 
-            // 检查signature
-            bool bFound = false;
-            bool bHasLine = false;
-            if (File.Exists(AllPlayers.strConfigFileName))
-            {
-                string[] arrayText = File.ReadAllLines(AllPlayers.strConfigFileName);
-                if (arrayText.Length > 0)
-                {
-                    bHasLine = true;
-                    for (int i = 0; i < arrayText.Length; ++i)
-                    {
-                        if (arrayText[i].IndexOf(signature) >= 0)
-                        {
-                            bFound = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (bFound)
-            {
-                System.Windows.Forms.MessageBox.Show(Program.form1, string.Format("重复{0}", signature));
-                return;
-            }
-
-            FileStream fs = File.Open(AllPlayers.strConfigFileName, FileMode.Append);
-            StreamWriter sw = new StreamWriter(fs);
-            if (bHasLine)
-            {
-                sw.Write(string.Format("\r\n{0}", signature));
-            }
-            else
-            {
-                sw.Write(signature);
-            }
-            sw.Flush();
-            sw.Close();
-            fs.Close();
 
             DxWinHttp http = new DxWinHttp();
-            http.Open("POST", HttpParam.URL + AllPlayers.strUrl, true);
+            http.Open("POST", HttpParam.URL + @"game/commitGameResult.action", true);
             SetHttpRequestHeader(http, pmCommitGameResult.GetSign());
             http.Send(pmCommitGameResult.GetParam());
 
-            System.Windows.Forms.MessageBox.Show(Program.form1, "消息发送完毕");
-            return;
-        }
+            Fiddler.FiddlerApplication.Log.LogFormat("{0}request: ClientToken:{1}, signature:{2}, type:{3}, score:{4}, useTime:{5}", zqdbFiddler.strPreNotify, pmCommitGameResult.strClientToken, signature, type, score, userTime);
+
+            dicSignaturePlayer.Add(signature, this);
+            return;           
+        } 
     };
+
+    class scoreItem
+    {
+        public int type;
+        public int score;
+        public int minSecond;
+        public int maxSecond;
+    }
 
     class AllPlayers
     {
-        public static bool bSetProxy = false;
-        public static string strConfigFileName = @"";
-        public static string strAccountFileName = @"";
-
-        public static string strParam = @"";
-        public static string strUrl = @"";
-        public static string strParamSignature = @"";
+        public static Dictionary<int, scoreItem> dicTypeScore = new Dictionary<int, scoreItem>();
+        public static int curProcessId = 0;
 
         public void Init()
         {
-            if (Program.form1.textBoxSetProxy_GetProxy().Equals("0"))
-                bSetProxy = false;
-            else
-                bSetProxy = true;
+            string strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config.csv";
+            string[] arrayText = File.ReadAllLines(strConfigFileName);
 
-            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.InitialDirectory = desktop;
-            openFileDialog.Filter = "txt File(*.txt)|*.txt";
-            openFileDialog.RestoreDirectory = true;
-            openFileDialog.FilterIndex = 1;
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            int nInit = 1;
+            for (int i = nInit; i < arrayText.Length; ++i)
             {
-                strAccountFileName = openFileDialog.FileName;
+                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+                scoreItem item = new scoreItem();
+                item.type = int.Parse(arrayParam[0]);
+                item.score = int.Parse(arrayParam[1]);
+                item.minSecond = int.Parse(arrayParam[2]);
+                item.maxSecond = int.Parse(arrayParam[3]);
+                dicTypeScore.Add(item.type, item);
             }
-            else
-            {
-                return;
-            }
-            strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config.csv";
-
-            string[] arrayText = File.ReadAllLines(strAccountFileName);
-            for (int i = 0; i < arrayText.Length; ++i)
-            {
-                if (arrayText[i].IndexOf("params=") == 0)
-                {
-                    strParam = arrayText[i];
-                }
-
-                if (arrayText[i].IndexOf("{\"code\":") == 0)
-                {
-                    strParamSignature = arrayText[i];
-                }
-            }
-            strUrl = @"game/commitGameResult.action";
-
-            Program.form1.Form1_Init();
+            
+            curProcessId = Process.GetCurrentProcess().Id;
         }
-
-
-        public void Run()
-        {
-            if (strAccountFileName == "")
-                return;
-
-            Player player = new Player();
-            player.Run();
-        }
-   
+  
     };
 
     public class zqdbFiddler
     {
-        static Proxy oSecureEndpoint;
-        static string sSecureEndpointHostname = "localhost";
-        static int iSecureEndpointPort = 7777;
+        public static string strPreNotify = @"notify ";
 
-        
         public static bool InstallCertificate()
         {
             if (!CertMaker.rootCertExists())
@@ -398,54 +337,72 @@ namespace zqdb
         {
             // <-- Personalize for your Application, 64 chars or fewer
             Fiddler.FiddlerApplication.SetAppDisplayName("FiddlerCoreZQDB");
-            Fiddler.FiddlerApplication.OnNotification += delegate(object sender, NotificationEventArgs oNEA) { Program.form1.richTextBoxFiddler_AddString("** NotifyUser: " + oNEA.NotifyString + "\n"); };
-            Fiddler.FiddlerApplication.Log.OnLogString += delegate(object sender, LogEventArgs oLEA) { Program.form1.richTextBoxFiddler_AddString("** LogString: " + oLEA.LogString + "\n"); };
+            Fiddler.FiddlerApplication.OnNotification += delegate(object sender, NotificationEventArgs oNEA) { Program.form1.richTextBoxFiddler_AddString(oNEA.NotifyString + "\n"); };
+            Fiddler.FiddlerApplication.Log.OnLogString += delegate(object sender, LogEventArgs oLEA) 
+            {
+                if (oLEA.LogString.IndexOf(strPreNotify) == 0)
+                    Program.form1.richTextBoxFiddler_AddString(oLEA.LogString.Substring(strPreNotify.Length) + "\n");
+                else
+                    Program.form1.richTextBoxFiddlerAll_AddString(oLEA.LogString + "\n");
+            };
 
             Fiddler.FiddlerApplication.BeforeRequest += delegate(Fiddler.Session oS)
             {
+                if (oS.fullUrl.Contains(HttpParam.URL))
+                {
+                    Fiddler.FiddlerApplication.Log.LogFormat("{0} Request {1}", oS.clientIP, oS.fullUrl);
+                }
+
                 // Console.WriteLine("Before request for:\t" + oS.fullUrl);
                 // In order to enable response tampering, buffering mode MUST
                 // be enabled; this allows FiddlerCore to permit modification of
                 // the response in the BeforeResponse handler rather than streaming
                 // the response to the client as the response comes in.
-                oS.bBufferResponse = false;
-
-                Fiddler.FiddlerApplication.Log.LogFormat("Request URL {0}", oS.fullUrl);// getting only http traffic details
-
-                // Set this property if you want FiddlerCore to automatically authenticate by
-                // answering Digest/Negotiate/NTLM/Kerberos challenges itself
-                // oS["X-AutoAuth"] = "(default)";
-
-                /* If the request is going to our secure endpoint, we'll echo back the response.
-                
-                Note: This BeforeRequest is getting called for both our main proxy tunnel AND our secure endpoint, 
-                so we have to look at which Fiddler port the client connected to (pipeClient.LocalPort) to determine whether this request 
-                was sent to secure endpoint, or was merely sent to the main proxy tunnel (e.g. a CONNECT) in order to *reach* the secure endpoint.
-
-                As a result of this, if you run the demo and visit https://localhost:7777 in your browser, you'll see
-
-                Session list contains...
-                 
-                    1 CONNECT http://localhost:7777
-                    200                                         <-- CONNECT tunnel sent to the main proxy tunnel, port 8877
-
-                    2 GET https://localhost:7777/
-                    200 text/html                               <-- GET request decrypted on the main proxy tunnel, port 8877
-
-                    3 GET https://localhost:7777/               
-                    200 text/html                               <-- GET request received by the secure endpoint, port 7777
-                */
-
-                if ((oS.oRequest.pipeClient.LocalPort == iSecureEndpointPort) && (oS.hostname == sSecureEndpointHostname))
+                if (oS.fullUrl.Contains(@"https://api.expop.com.cn/v3/app/game/getGameSign.action"))
                 {
-                    oS.utilCreateResponseAndBypassServer();
-                    oS.oResponse.headers.SetStatus(200, "Ok");
-                    oS.oResponse["Content-Type"] = "text/html; charset=UTF-8";
-                    oS.oResponse["Cache-Control"] = "private, max-age=0";
-                    oS.utilSetResponseBody("<html><body>Request for httpS://" + sSecureEndpointHostname + ":" + iSecureEndpointPort.ToString() + " received. Your request was:<br /><plaintext>" + oS.oRequest.headers.ToString());
+                    oS.bBufferResponse = true;
+                    
+                }
+
+                if (oS.fullUrl.Contains(@"https://api.expop.com.cn/v3/app/game/commitGameResult.action"))
+                {
+                    if (oS.LocalProcessID != AllPlayers.curProcessId)
+                    {
+                        oS.utilCreateResponseAndBypassServer();
+                        oS.LoadResponseFromFile(System.Environment.CurrentDirectory + @"\" + @"response.txt");
+
+                        HttpParam param = new HttpParam(oS.GetRequestBodyAsString());
+                        Fiddler.FiddlerApplication.Log.LogFormat("{0}auto: ClientToken:{1}, signature:{2}, result:{3}", zqdbFiddler.strPreNotify, param.strClientToken, (string)param.joBody["signature"], oS.GetResponseBodyAsString());
+                    }
+                    else
+                    {
+                        oS.bBufferResponse = true;
+                    }
                 }
             };
 
+            Fiddler.FiddlerApplication.BeforeResponse += delegate(Fiddler.Session oS)
+            {
+                if (oS.fullUrl.Contains(@"https://api.expop.com.cn/v3/app/game/getGameSign.action"))
+                {
+                    Player player = new Player();
+                    player.response_getGameSign(oS);
+                }
+
+                if (oS.fullUrl.Contains(@"https://api.expop.com.cn/v3/app/game/commitGameResult.action"))
+                {
+                    if (oS.LocalProcessID == AllPlayers.curProcessId)
+                    {
+                        HttpParam param = new HttpParam(oS.GetRequestBodyAsString());
+                        Player player = Player.dicSignaturePlayer[(string)param.joBody["signature"]];
+
+                        Fiddler.FiddlerApplication.Log.LogFormat("{0}response: ClientToken:{1}, signature:{2}, result:{3}", zqdbFiddler.strPreNotify, param.strClientToken, player.signature, oS.GetResponseBodyAsString());
+                        Player.dicSignaturePlayer.Remove(player.signature);
+                    }
+                }
+            };
+
+            
             Fiddler.CONFIG.IgnoreServerCertErrors = false;
             FiddlerApplication.Prefs.SetBoolPref("fiddler.network.streaming.abortifclientaborts", true);
             FiddlerCoreStartupFlags oFCSF = FiddlerCoreStartupFlags.Default;
@@ -455,24 +412,17 @@ namespace zqdb
             CONFIG.IgnoreServerCertErrors = true;
             var cert = InstallCertificate();// getting true
 
-            int iPort = 8877;
+            int iPort = 8888;
             Fiddler.FiddlerApplication.Startup(iPort, oFCSF);
             FiddlerApplication.Log.LogFormat("Created endpoint listening on port {0}", iPort);
 
             FiddlerApplication.Log.LogFormat("Starting with settings: [{0}]", oFCSF);
             FiddlerApplication.Log.LogFormat("Gateway: {0}", CONFIG.UpstreamGateway.ToString());
-
-            oSecureEndpoint = FiddlerApplication.CreateProxyEndpoint(iSecureEndpointPort, true, sSecureEndpointHostname);
-            if (null != oSecureEndpoint)
-            {
-                FiddlerApplication.Log.LogFormat("Created secure endpoint listening on port {0}, using a HTTPS certificate for '{1}'", iSecureEndpointPort, sSecureEndpointHostname);
-            }
         }
 
 
         public static void doQuit()
         {
-            if (null != oSecureEndpoint) oSecureEndpoint.Dispose();
             Fiddler.FiddlerApplication.Shutdown();        
         }
     };
