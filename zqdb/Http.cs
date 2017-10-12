@@ -246,7 +246,7 @@ namespace zqdb
         public void Run()
         {
             // login.action
-            Program.form1.richTextBoxStatus_AddString("开始登录...");
+            Program.form1.richTextBoxStatus_AddString("开始登录...\n");
             pmLogin = new HttpParam(joLoginParam);
             JObject joLoginReturn = new JObject();
             int nTimes = 0;
@@ -269,16 +269,20 @@ namespace zqdb
                 nTimes++;
                 if (nTimes >= 10)
                 {
-                    Program.form1.richTextBoxStatus_AddString("登录失败！");
+                    Program.form1.richTextBoxStatus_AddString("登录失败！\n");
                     return;
                 }
             }
             pmLogin.strUserId = (string)joLoginReturn["data"][HttpParam.USERID];
             pmLogin.strUserToken = (string)joLoginReturn["data"][HttpParam.USERTOKEN];
-            Program.form1.richTextBoxStatus_AddString("登录成功！");
+            Program.form1.richTextBoxStatus_AddString("登录成功！\n");
+
+            int nRandomSleep = (new Random()).Next(30000, 60000);
+            Program.form1.richTextBoxStatus_AddString(string.Format("开始延时:{0}秒\n", (int)(nRandomSleep/1000)));
+            Thread.Sleep(nRandomSleep);
 
             // signIn.action
-            Program.form1.richTextBoxStatus_AddString("开始签到...");
+            Program.form1.richTextBoxStatus_AddString("开始签到...\n");
             HttpParam pmSignIn = new HttpParam(pmLogin);
             JObject joSignIn = new JObject();
             while (true)
@@ -294,23 +298,170 @@ namespace zqdb
                     joSignIn = (JObject)JsonConvert.DeserializeObject(httpSignIn.ResponseBody);
                     if ((string)joSignIn["code"] == @"0")
                     {
-                        Program.form1.richTextBoxStatus_AddString("签到成功!");
+                        Program.form1.richTextBoxStatus_AddString("签到成功!\n");
                     }
                     else
                     {
                         JToken outMsg;
                         if (joSignIn.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
                         {
-                            Program.form1.richTextBoxStatus_AddString(string.Format("签到失败：{0}", (string)joSignIn["msg"]));
+                            Program.form1.richTextBoxStatus_AddString(string.Format("签到失败：{0}\n", (string)joSignIn["msg"]));
                         }
                         else 
                         {
-                            Program.form1.richTextBoxStatus_AddString("签到失败!");
+                            Program.form1.richTextBoxStatus_AddString("签到失败!\n");
                         }
                     }
                     break;
                 }
             }
+
+            Program.form1.richTextBoxStatus_AddString(string.Format("开始延时:{0}秒\n", (int)(nRandomSleep / 1000)));
+            Thread.Sleep(nRandomSleep);
+
+            // forum/post.action
+            Program.form1.richTextBoxStatus_AddString("开始发帖...\n");
+            HttpParam pmPost = new HttpParam(pmLogin);
+            int nRandomTitle = (new Random()).Next(0, AllPlayers.listPostInfo.Count());
+            pmPost.joBody = new JObject(
+                new JProperty("boardId", "4"),
+                new JProperty("images", ""),
+                new JProperty("title", AllPlayers.listPostInfo[nRandomTitle].title),
+                new JProperty("content", AllPlayers.listPostInfo[nRandomTitle].content)
+                ); 
+            
+            JObject joPost = new JObject();
+            bool postSuccess = false;
+            while (true)
+            {
+                DxWinHttp httpPost = new DxWinHttp();
+                httpPost.Open("POST", HttpParam.URL + @"forum/post.action", true);
+                SetHttpRequestHeader(httpPost, pmPost.GetSign());
+                httpPost.Send(pmPost.GetParam());
+
+                WaitForResponse(httpPost);
+                if (httpPost.ResponseBody.Length > 0 && httpPost.ResponseBody.IndexOf(@"""code"":") >= 0)
+                {
+                    joPost = (JObject)JsonConvert.DeserializeObject(httpPost.ResponseBody);
+                    if ((string)joPost["code"] == @"0")
+                    {
+                        Program.form1.richTextBoxStatus_AddString("发帖成功!\n");
+                        postSuccess = true;
+                    }
+                    else
+                    {
+                        JToken outMsg;
+                        if (joPost.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
+                        {
+                            Program.form1.richTextBoxStatus_AddString(string.Format("发帖失败：{0}\n", (string)joPost["msg"]));
+                        }
+                        else
+                        {
+                            Program.form1.richTextBoxStatus_AddString("发帖失败!\n");
+                        }
+                    }
+                    break;
+                }
+            }
+
+            // 删帖 user/myNote.action，forum/delForum.action 
+            if (postSuccess)
+            {
+                Program.form1.richTextBoxStatus_AddString(string.Format("开始延时:{0}秒\n", (int)(nRandomSleep / 1000)));
+                Thread.Sleep(nRandomSleep);
+
+                // user/myNote.action
+                Program.form1.richTextBoxStatus_AddString("开始获取列表...\n");
+                HttpParam pmMyNote = new HttpParam(pmLogin);
+                pmMyNote.joBody = new JObject(
+                    new JProperty("startIndex", (int)0),
+                    new JProperty("pageSize", (int)20)
+                    );
+
+                JObject joMyNote = new JObject();
+                int postid = 0;
+                while (true)
+                {
+                    DxWinHttp httpMyNote = new DxWinHttp();
+                    httpMyNote.Open("POST", HttpParam.URL + @"user/myNote.action", true);
+                    SetHttpRequestHeader(httpMyNote, pmMyNote.GetSign());
+                    httpMyNote.Send(pmMyNote.GetParam());
+
+                    WaitForResponse(httpMyNote);
+                    if (httpMyNote.ResponseBody.Length > 0 && httpMyNote.ResponseBody.IndexOf(@"""code"":") >= 0)
+                    {
+                        joMyNote = (JObject)JsonConvert.DeserializeObject(httpMyNote.ResponseBody);
+                        if ((string)joMyNote["code"] == @"0")
+                        {
+                            Program.form1.richTextBoxStatus_AddString("获取列表成功!\n");
+                            if((int)joMyNote["data"]["totalNum"] > 0)
+                            {
+                                postid = (int)((JObject)(((JArray)joMyNote["data"]["list"])[0]))["id"];
+                            }
+                        }
+                        else
+                        {
+                            JToken outMsg;
+                            if (joMyNote.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
+                            {
+                                Program.form1.richTextBoxStatus_AddString(string.Format("获取列表失败：{0}\n", (string)joMyNote["msg"]));
+                            }
+                            else
+                            {
+                                Program.form1.richTextBoxStatus_AddString("获取列表失败!\n");
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                // forum/delForum.action 
+                if (postid != 0)
+                {
+                    Program.form1.richTextBoxStatus_AddString(string.Format("开始延时:{0}秒\n", (int)(nRandomSleep / 1000)));
+                    Thread.Sleep(nRandomSleep);
+
+                    Program.form1.richTextBoxStatus_AddString("开始删帖...\n");
+                    HttpParam pmDelForum = new HttpParam(pmLogin);
+                    pmDelForum.joBody = new JObject(
+                        new JProperty("forumId", Convert.ToString(postid))
+                        );
+
+                    JObject joDelForum = new JObject();
+                     while (true)
+                    {
+                        DxWinHttp httpDelForum = new DxWinHttp();
+                        httpDelForum.Open("POST", HttpParam.URL + @"forum/delForum.action", true);
+                        SetHttpRequestHeader(httpDelForum, pmDelForum.GetSign());
+                        httpDelForum.Send(pmDelForum.GetParam());
+
+                        WaitForResponse(httpDelForum);
+                        if (httpDelForum.ResponseBody.Length > 0 && httpDelForum.ResponseBody.IndexOf(@"""code"":") >= 0)
+                        {
+                            joDelForum = (JObject)JsonConvert.DeserializeObject(httpDelForum.ResponseBody);
+                            if ((string)joDelForum["code"] == @"0")
+                            {
+                                Program.form1.richTextBoxStatus_AddString("删帖成功!\n");
+                            }
+                            else
+                            {
+                                JToken outMsg;
+                                if (joDelForum.TryGetValue("msg", out outMsg) && outMsg.Type != JTokenType.Null)
+                                {
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("删帖失败：{0}\n", (string)joDelForum["msg"]));
+                                }
+                                else
+                                {
+                                    Program.form1.richTextBoxStatus_AddString("删帖失败!\n");
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Program.form1.richTextBoxStatus_AddString("任务完成!\n");
         }
     };
 
@@ -340,9 +491,9 @@ namespace zqdb
 
         public void Init()
         {
-            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            //string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.InitialDirectory = desktop;
+            openFileDialog.InitialDirectory = System.Environment.CurrentDirectory;
             openFileDialog.Filter = "txt File(*.txt)|*.txt";
             openFileDialog.RestoreDirectory = true;
             openFileDialog.FilterIndex = 1;
@@ -356,8 +507,6 @@ namespace zqdb
             }
 
             strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config.txt";
-            string strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config.txt";
-            string[] arrayText = File.ReadAllLines(strConfigFileName); 
             
             string[] arrayConfig = File.ReadAllLines(strConfigFileName);
             string[] arrayText = File.ReadAllLines(strAccountFileName);
@@ -403,7 +552,6 @@ namespace zqdb
 
                 player.nIndex = i - nInit;
                 player.joLoginParam = joParam;
-                player.strTelephone = (string)joParam[HttpParam.BODY]["phone"];
                 break;
             }
         }
@@ -411,7 +559,8 @@ namespace zqdb
 
         public void Run()
         {
-            player.Run();
+            Thread thread = new Thread(new ThreadStart(player.Run));
+            thread.Start();
         }
     };
      
