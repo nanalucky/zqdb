@@ -10,9 +10,21 @@ using System.Windows.Forms;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Threading;
 
 namespace zqdb
 {
+    public enum Column
+    {
+        Telephone = 0,
+        Login,
+        SignIn,
+        Post,
+        MyNote,
+        DelForum
+    };
+    
+    
     public partial class Form1 : Form
     {
         AllPlayers allPlayers = new AllPlayers();
@@ -31,7 +43,9 @@ namespace zqdb
         {
             buttonRun.Enabled = false;
             allPlayers.Init();
-            allPlayers.Run();
+
+            Thread thread = new Thread(new ThreadStart(allPlayers.Run));
+            thread.Start();
         }
 
         public void Form1_Init()
@@ -44,12 +58,43 @@ namespace zqdb
                 textBoxSetProxy.Text = "false";
             textBoxApiVer.Text = AllPlayers.strApiVer;
             textBoxClientType.Text = AllPlayers.strClientType;
-            textBoxClientVer.Text = AllPlayers.strClientVer; 
+            textBoxClientVer.Text = AllPlayers.strClientVer;
+            dataGridViewInfo.Rows.Clear();
         }
                 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             Environment.Exit(0);
+        }
+
+        private void dataGridViewInfo_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        public void dataGridViewInfo_AddRow(string _phone)
+        {
+            dataGridViewInfo.Rows.Add(_phone);
+        }        
+
+        
+        public delegate void DelegateUpdateDataGridView(string telephone, Column colIndex, string colValue);
+        public void UpdateDataGridView(string telephone, Column colIndex, string colValue)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new DelegateUpdateDataGridView(UpdateDataGridView), new object[] { telephone, colIndex, colValue });
+            }
+            
+            int nCount = dataGridViewInfo.Rows.Count;
+            for (int i = 0; i < nCount; ++i)
+            {
+                if ((string)dataGridViewInfo[(int)Column.Telephone, i].Value == telephone)
+                {
+                    dataGridViewInfo[(int)colIndex, i].Value = colValue;
+                    return;
+                }
+            }            
         }
 
         public delegate void DelegateRichTextBoxStatus_AddString(string strAdd);

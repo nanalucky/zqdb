@@ -28,6 +28,12 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle13 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle14 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle15 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle16 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle17 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle18 = new System.Windows.Forms.DataGridViewCellStyle();
             this.buttonRun = new System.Windows.Forms.Button();
             this.label8 = new System.Windows.Forms.Label();
             this.textBoxSetProxy = new System.Windows.Forms.TextBox();
@@ -39,7 +45,15 @@
             this.textBoxClientType = new System.Windows.Forms.TextBox();
             this.textBoxConfig = new System.Windows.Forms.TextBox();
             this.textBoxAccount = new System.Windows.Forms.TextBox();
+            this.dataGridViewInfo = new System.Windows.Forms.DataGridView();
+            this.Telephone = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Login = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.SignIn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Post = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.MyNote = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.DelForum = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.richTextBoxStatus = new System.Windows.Forms.RichTextBox();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewInfo)).BeginInit();
             this.SuspendLayout();
             // 
             // buttonRun
@@ -145,12 +159,82 @@
             this.textBoxAccount.Size = new System.Drawing.Size(525, 28);
             this.textBoxAccount.TabIndex = 35;
             // 
+            // dataGridViewInfo
+            // 
+            this.dataGridViewInfo.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridViewInfo.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.Telephone,
+            this.Login,
+            this.SignIn,
+            this.Post,
+            this.MyNote,
+            this.DelForum});
+            this.dataGridViewInfo.Location = new System.Drawing.Point(46, 211);
+            this.dataGridViewInfo.Name = "dataGridViewInfo";
+            this.dataGridViewInfo.RowTemplate.Height = 30;
+            this.dataGridViewInfo.Size = new System.Drawing.Size(1204, 527);
+            this.dataGridViewInfo.TabIndex = 37;
+            this.dataGridViewInfo.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridViewInfo_CellContentClick);
+            // 
+            // Telephone
+            // 
+            dataGridViewCellStyle13.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            this.Telephone.DefaultCellStyle = dataGridViewCellStyle13;
+            this.Telephone.HeaderText = "Telephone";
+            this.Telephone.Name = "Telephone";
+            this.Telephone.ReadOnly = true;
+            // 
+            // Login
+            // 
+            dataGridViewCellStyle14.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            this.Login.DefaultCellStyle = dataGridViewCellStyle14;
+            this.Login.HeaderText = "登录";
+            this.Login.Name = "Login";
+            this.Login.ReadOnly = true;
+            this.Login.Width = 120;
+            // 
+            // SignIn
+            // 
+            dataGridViewCellStyle15.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            this.SignIn.DefaultCellStyle = dataGridViewCellStyle15;
+            this.SignIn.HeaderText = "签到";
+            this.SignIn.Name = "SignIn";
+            this.SignIn.ReadOnly = true;
+            this.SignIn.Width = 120;
+            // 
+            // Post
+            // 
+            dataGridViewCellStyle16.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            this.Post.DefaultCellStyle = dataGridViewCellStyle16;
+            this.Post.HeaderText = "发帖";
+            this.Post.Name = "Post";
+            this.Post.ReadOnly = true;
+            this.Post.Width = 120;
+            // 
+            // MyNote
+            // 
+            dataGridViewCellStyle17.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            this.MyNote.DefaultCellStyle = dataGridViewCellStyle17;
+            this.MyNote.HeaderText = "获取帖子列表";
+            this.MyNote.Name = "MyNote";
+            this.MyNote.ReadOnly = true;
+            this.MyNote.Width = 120;
+            // 
+            // DelForum
+            // 
+            dataGridViewCellStyle18.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            this.DelForum.DefaultCellStyle = dataGridViewCellStyle18;
+            this.DelForum.HeaderText = "删帖";
+            this.DelForum.Name = "DelForum";
+            this.DelForum.ReadOnly = true;
+            this.DelForum.Width = 120;
+            // 
             // richTextBoxStatus
             // 
-            this.richTextBoxStatus.Location = new System.Drawing.Point(46, 224);
+            this.richTextBoxStatus.Location = new System.Drawing.Point(45, 769);
             this.richTextBoxStatus.Name = "richTextBoxStatus";
-            this.richTextBoxStatus.Size = new System.Drawing.Size(697, 236);
-            this.richTextBoxStatus.TabIndex = 36;
+            this.richTextBoxStatus.Size = new System.Drawing.Size(1204, 76);
+            this.richTextBoxStatus.TabIndex = 38;
             this.richTextBoxStatus.Text = "";
             // 
             // Form1
@@ -158,8 +242,9 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(1288, 541);
+            this.ClientSize = new System.Drawing.Size(1288, 890);
             this.Controls.Add(this.richTextBoxStatus);
+            this.Controls.Add(this.dataGridViewInfo);
             this.Controls.Add(this.textBoxAccount);
             this.Controls.Add(this.textBoxConfig);
             this.Controls.Add(this.textBoxClientType);
@@ -176,6 +261,7 @@
             this.Text = "ZQDB - 发帖刷积分";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewInfo)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -194,6 +280,13 @@
         private System.Windows.Forms.TextBox textBoxClientType;
         private System.Windows.Forms.TextBox textBoxConfig;
         private System.Windows.Forms.TextBox textBoxAccount;
+        private System.Windows.Forms.DataGridView dataGridViewInfo;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Telephone;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Login;
+        private System.Windows.Forms.DataGridViewTextBoxColumn SignIn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Post;
+        private System.Windows.Forms.DataGridViewTextBoxColumn MyNote;
+        private System.Windows.Forms.DataGridViewTextBoxColumn DelForum;
         private System.Windows.Forms.RichTextBox richTextBoxStatus;
     }
 }
