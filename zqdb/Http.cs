@@ -299,7 +299,7 @@ namespace zqdb
                                 string szQuestion = szSubStem+szSubFileName;
                                 string szAnswer = "";
                                 AllPlayers.dic_QuestionFileName_Answer.TryGetValue(szQuestion, out szAnswer);
-                                if (szAnswer == "")
+                                if (szAnswer == null || szAnswer == "")
                                 {
                                     Program.form1.richTextBoxStatus_AddString(string.Format("是非题查找出错:{0}\n", szQuestion));
                                     AllPlayers.RecordError(szQuestion);
@@ -341,25 +341,37 @@ namespace zqdb
                                 int nIndex = szFileName.IndexOf(".");
                                 string szSubFileName = szFileName.Substring(0, nIndex);
                                 string szAnswer = "";
-                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out szAnswer);
-                                if (szAnswer == "")
+                                List<string> listMusic = new List<string>();
+                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out listMusic);
+                                if (listMusic == null || listMusic.Count() == 0)
                                 {
                                     Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
                                     AllPlayers.RecordError(szSubFileName);
 
-                                    string[] arrayList = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
-                                    szAnswer = arrayList[0];
+                                    string[] arrayError = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
+                                    szAnswer = arrayError[0];
                                 }
                                 else 
                                 {
-                                    string[] arrayList = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
-                                    foreach (string szValue in arrayList)
+                                    string[] arrayError = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
+                                    foreach (string szError1 in arrayError)
                                     {
-                                        if (szAnswer.Equals(szValue, StringComparison.CurrentCultureIgnoreCase))
+                                        foreach (string szMusic in listMusic)
                                         {
-                                            szAnswer = szValue;
-                                            break;
+                                            if (szMusic.Equals(szError1, StringComparison.CurrentCultureIgnoreCase))
+                                            {
+                                                szAnswer = szError1;
+                                                break;
+                                            }
                                         }
+
+                                        if (szAnswer != "")
+                                            break;
+                                    }
+                                    if (szAnswer == "")
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("音乐名不在题目选项中:{0}\n", szSubFileName));
+                                        szAnswer = arrayError[0];
                                     }
                                 }
 
@@ -397,33 +409,37 @@ namespace zqdb
                             {
                                 int nIndex = szFileName.IndexOf(".");
                                 string szSubFileName = szFileName.Substring(0, nIndex);
-                                string szMusic = "";
                                 string szAnswer = "";
                                 string[] arrayLyric = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
 
-                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out szMusic);
-                                if (szMusic == "")
+                                List<string> listMusic = new List<string>();
+                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out listMusic);
+                                if (listMusic == null || listMusic.Count() == 0)
                                 {
                                     Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
                                     AllPlayers.RecordError(szSubFileName);
                                 }
-
-                                if (szMusic != "")
+                                else
                                 {
                                     for (int nLyric = 0; nLyric < arrayLyric.Count(); nLyric++)
                                     {
                                         string szTmpMusic = "";
                                         AllPlayers.dic_Lyric_Music.TryGetValue(arrayLyric[nLyric], out szTmpMusic);
-                                        if (szTmpMusic == "")
+                                        if (szTmpMusic == null || szTmpMusic == "")
                                         {
                                             Program.form1.richTextBoxStatus_AddString(string.Format("歌词查音乐出错:{0}\n", arrayLyric[nLyric]));
                                             AllPlayers.RecordError(arrayLyric[nLyric]);
                                         }
-
-                                        if (szTmpMusic != "" && szMusic.Equals(szTmpMusic, StringComparison.CurrentCultureIgnoreCase))
+                                        else
                                         {
-                                            szAnswer = arrayLyric[nLyric];
-                                            break;
+                                            foreach (string szMusic in listMusic)
+                                            {
+                                                if (szTmpMusic.Equals(szMusic, StringComparison.CurrentCultureIgnoreCase))
+                                                {
+                                                    szAnswer = arrayLyric[nLyric];
+                                                    break;
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -533,24 +549,37 @@ namespace zqdb
                     int nIndex = szFileName.IndexOf(".");
                     string szSubFileName = szFileName.Substring(0, nIndex);
                     string szMusic = "";
-                    AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out szMusic);
-                    if (szMusic == "")
+                    List<string> listMusic = new List<string>();
+                    AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out listMusic);
+                    if (listMusic == null || listMusic.Count() == 0)
                     {
                         Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
                         AllPlayers.RecordError(szSubFileName);
 
-                        szMusic = (string)((JArray)joQlistResult["Option"])[0];
+                        szMusic = listOption[0];
                     }
                     else
                     {
-                        foreach (string szValue in listOption)
+                        foreach (string szOption in listOption)
                         {
-                            if (szMusic.Equals(szValue, StringComparison.CurrentCultureIgnoreCase))
+                            foreach (string szMusic1 in listMusic)
                             {
-                                szMusic = szValue;
-                                break;
+                                if (szMusic1.Equals(szOption, StringComparison.CurrentCultureIgnoreCase))
+                                {
+                                    szMusic = szOption;
+                                    break;
+                                }
                             }
+
+                            if (szMusic != "")
+                                break;
                         }
+                        if (szMusic == "")
+                        {
+                            Program.form1.richTextBoxStatus_AddString(string.Format("音乐名不在题目选项中:{0}\n", szSubFileName));
+                            szMusic = szMusic = listOption[0];
+                        }
+
                     }
 
                     if (nQlist == 0)
@@ -601,7 +630,7 @@ namespace zqdb
         public static bool bSetProxy = false;
         public static string strUserId = "";
         public static Dictionary<string, string> dic_Lyric_Music = new Dictionary<string, string>();
-        public static Dictionary<string, string> dic_FileName_Music = new Dictionary<string, string>();
+        public static Dictionary<string, List<string>> dic_FileName_Music = new Dictionary<string, List<string>>();
         public static Dictionary<string, string> dic_QuestionFileName_Answer = new Dictionary<string, string>();
         public static string szConfigError = "";
 
@@ -642,7 +671,12 @@ namespace zqdb
             {
                 string[] arrayParam = arrayText[i].Split(new char[] { ',' });
                 if (arrayParam.Length >= 3)
-                    dic_FileName_Music.Add(arrayParam[1], arrayParam[2]);
+                {
+                    List<string> listMusic = new List<string>();
+                    for (int nMusic = 2; nMusic < arrayParam.Length; ++nMusic)
+                        listMusic.Add(arrayParam[nMusic]);
+                    dic_FileName_Music.Add(arrayParam[1], listMusic);
+                }
             }
 
             Program.form1.Form1_Init();
