@@ -30,24 +30,52 @@ namespace zqdb
 
         private void button1_Click(object sender, EventArgs e)
         {
+            buttonRun.Enabled = false;
             allPlayers.Init();
             allPlayers.Run();
         }
 
+
         public void Form1_Init()
         {
-            textBoxConfig.Text = AllPlayers.strConfigFileName;
-            textBoxAccount.Text = AllPlayers.strAccountFileName;
         }
 
-        public string textBoxScore_GetScore()
+        public string textBoxUserId_GetUserId()
         {
-            return textBoxScore.Text;
+            return textBoxUserId.Text;
         }
 
         public string textBoxSetProxy_GetProxy()
         {
             return textBoxSetProxy.Text;
+        }
+
+        public delegate void DelegateRichTextBoxStatus_AddString(string strAdd);
+        public void richTextBoxStatus_AddString(string strAdd)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new DelegateRichTextBoxStatus_AddString(richTextBoxStatus_AddString), new object[] { strAdd });
+                return;
+            }
+            richTextBoxStatus.Focus();
+            //设置光标的位置到文本尾   
+            richTextBoxStatus.Select(richTextBoxStatus.TextLength, 0);
+            //滚动到控件光标处   
+            richTextBoxStatus.ScrollToCaret();
+            richTextBoxStatus.AppendText(strAdd);
+        }
+
+        public delegate void DelegateButton1_Enabled();
+        public void button1_Enabled()
+        { 
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new DelegateButton1_Enabled(button1_Enabled), new object[] { });
+                return;
+            }
+
+            buttonRun.Enabled = true;
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)

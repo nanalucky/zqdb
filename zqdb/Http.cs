@@ -212,160 +212,467 @@ namespace zqdb
     public class Player
     {
        
-        void SetHttpRequestHeader(DxWinHttp _http, string _sign)
+        void SetHttpRequestHeader(DxWinHttp _http)
         {
             if(AllPlayers.bSetProxy)
                 _http.SetProxy(2, "127.0.0.1:8888", "0");
 
-            _http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            _http.SetRequestHeader("Host", "api.expop.com.cn");
-            //_http.SetRequestHeader("Connection", "Keep-Alive");
-            _http.SetRequestHeader("Accept-Encoding", "gzip");
-            _http.SetRequestHeader("User-Agent", "okhttp/3.4.1");
-            _http.SetRequestHeader("Encrypt-Sign", _sign);
+            //_http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            _http.SetRequestHeader("Accept-Encoding", "identity");
+            _http.SetRequestHeader("User-Agent", "Dalvik/2.1.0 (Linux; U; Android 7.1.1; vivo Xplay6 Build/NMF26F)");
+            _http.SetRequestHeader("Host", "gapi.expop.com.cn");
         }
 
-        bool WaitForResponse(DxWinHttp _http)
-        {
-            DateTime timeStart = DateTime.Now;
-            while(true)
-            {
-                bool succeeded = false;
-                _http.WaitForResponse(1, out succeeded);
-                if (_http.ResponseBody.Length > 0)
-                    break;
-                if ((int)((DateTime.Now - timeStart).TotalSeconds) > 30)
-                    break;
-            }
-            return true;
-        }
 
- 
         public void Run()
         {
-            JObject paramSignature = (JObject)JsonConvert.DeserializeObject(AllPlayers.strParamSignature);
-            string signature = (string)paramSignature["data"]["signature"];
-            HttpParam pmGetGameSign = new HttpParam(AllPlayers.strParam);
-            int type = (int)pmGetGameSign.joBody["type"];
-            int userTime = (new Random()).Next(14000, 15000);
-
-            HttpParam pmCommitGameResult = new HttpParam(AllPlayers.strParam);
-            pmCommitGameResult.joBody = new JObject(
-                    new JProperty("type", type),
-                    new JProperty("useTime", userTime),
-                    new JProperty("signature", signature),
-                    new JProperty("score", int.Parse(Program.form1.textBoxScore_GetScore()))
-                    );
-
-            // 检查signature
-            bool bFound = false;
-            bool bHasLine = false;
-            if (File.Exists(AllPlayers.strConfigFileName))
+            int nTime = 0;
+            while(nTime < 3)
             {
-                string[] arrayText = File.ReadAllLines(AllPlayers.strConfigFileName);
-                if (arrayText.Length > 0)
+                Program.form1.richTextBoxStatus_AddString(string.Format("最强听音第{0}次\n", nTime));
+                nTime++;
+
+                JObject joQlistResult = new JObject();
+                int nCreateSetTime = 0;
+                while(nCreateSetTime < 3)
                 {
-                    bHasLine = true;
-                    for (int i = 0; i < arrayText.Length; ++i)
+                    DxWinHttp http = new DxWinHttp();
+                    string szUrl = string.Format("http://gapi.expop.com.cn/Game/CreateSet?UserID={0}&&Diffcult=3", AllPlayers.strUserId);
+                    http.Open("GET", szUrl, false);
+                    SetHttpRequestHeader(http);
+                    http.Send("");
+                    if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""Qlist"":") >= 0)
                     {
-                        if (arrayText[i].IndexOf(signature) >= 0)
+                        joQlistResult = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                        Program.form1.richTextBoxStatus_AddString(string.Format("获取问题列表成功\n"));
+                        break;
+                    }
+
+                    Program.form1.richTextBoxStatus_AddString(string.Format("获取问题列表出错：{0}\n", http.ResponseBody));
+                    nCreateSetTime++;
+                }
+
+                if (nCreateSetTime >= 3)
+                {
+                    Program.form1.richTextBoxStatus_AddString(string.Format("获取问题列表出错，放弃\n"));
+                    continue;
+                }
+
+                
+                JArray jaQlist = (JArray)joQlistResult["Qlist"];
+                for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
+                {
+                    int nPlayActionTimes = 0;
+                    while (nPlayActionTimes < 3)
+                    {
+                        DxWinHttp httpPlayAction = new DxWinHttp();
+                        string szUrlPlayAction = string.Format("http://gapi.expop.com.cn/Game/PlayAction?UserID={0}&now={1}", AllPlayers.strUserId, nQlist);
+                        httpPlayAction.Open("GET", szUrlPlayAction, false);
+                        SetHttpRequestHeader(httpPlayAction);
+                        httpPlayAction.Send("");
+                        if (httpPlayAction.ResponseBody.Length > 0 && httpPlayAction.ResponseBody.IndexOf(@"""Code"":") >= 0)
                         {
-                            bFound = true;
+                            Program.form1.richTextBoxStatus_AddString(string.Format("第{0}题\n", nQlist));
                             break;
                         }
+                        Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpPlayAction.ResponseBody));
+                        nPlayActionTimes++;
+                    }
+                    
+                    JObject joQuestion = (JObject)jaQlist[nQlist];
+                    string szError = (string)joQuestion["error"];
+                    string szFileName = (string)joQuestion["fileName"];
+                    string szFileSize = (string)joQuestion["fileSize"];
+                    string szStem = (string)joQuestion["stem"];
+                    int nType = (int)joQuestion["Type"];
+
+                    switch(nType)
+                    {
+                        case 1:
+                            {
+                                int nIndex = szStem.IndexOf("，对吗");
+                                if (nIndex < 0)
+                                    nIndex = szStem.IndexOf("。对吗");
+                                string szSubStem = szStem.Substring(0, nIndex);
+                                nIndex = szFileName.IndexOf(".");
+                                string szSubFileName = szFileName.Substring(0, nIndex);
+                                string szQuestion = szSubStem+szSubFileName;
+                                string szAnswer = "";
+                                AllPlayers.dic_QuestionFileName_Answer.TryGetValue(szQuestion, out szAnswer);
+                                if (szAnswer == "")
+                                {
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("是非题查找出错:{0}\n", szQuestion));
+                                    AllPlayers.RecordError(szQuestion);
+                                    szAnswer = "不对";
+                                }
+
+                                Program.form1.richTextBoxStatus_AddString(string.Format("Type1:{0},{1},{2}\n", szSubStem, szSubFileName, szAnswer));
+
+                                int nAnswerTimes = 0;
+                                while (nAnswerTimes < 3)
+                                {
+                                    DxWinHttp httpAnswer = new DxWinHttp();
+                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}", AllPlayers.strUserId, nQlist, Uri.EscapeDataString(szAnswer));
+                                    httpAnswer.Open("GET", szUrlAnswer, false);
+                                    SetHttpRequestHeader(httpAnswer);
+                                    httpAnswer.Send("");
+                                    if (httpAnswer.ResponseBody.Length > 0 && httpAnswer.ResponseBody.IndexOf(@"""Code"":") >= 0)
+                                    {
+                                        JObject joAnswer = (JObject)JsonConvert.DeserializeObject(httpAnswer.ResponseBody);
+                                        if ((string)joAnswer["Code"] == "0")
+                                        {
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                        }
+                                        else 
+                                        {
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题是：error:{0},fileName:{1},stem:{2}\n", szError, szFileName, szStem));
+                                        }
+                                        break;
+                                    }
+
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                    nAnswerTimes++;
+                                }
+                            }
+                            break;
+                        case 2:
+                            {
+                                int nIndex = szFileName.IndexOf(".");
+                                string szSubFileName = szFileName.Substring(0, nIndex);
+                                string szAnswer = "";
+                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out szAnswer);
+                                if (szAnswer == "")
+                                {
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
+                                    AllPlayers.RecordError(szSubFileName);
+
+                                    string[] arrayList = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
+                                    szAnswer = arrayList[0];
+                                }
+                                else 
+                                {
+                                    string[] arrayList = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
+                                    foreach (string szValue in arrayList)
+                                    {
+                                        if (szAnswer.Equals(szValue, StringComparison.CurrentCultureIgnoreCase))
+                                        {
+                                            szAnswer = szValue;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                Program.form1.richTextBoxStatus_AddString(string.Format("Type2:{0},{1}\n", szSubFileName, szAnswer));
+
+                                int nAnswerTimes = 0;
+                                while (nAnswerTimes < 3)
+                                {
+                                    DxWinHttp httpAnswer = new DxWinHttp();
+                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}", AllPlayers.strUserId, nQlist, Uri.EscapeDataString(szAnswer));
+                                    httpAnswer.Open("GET", szUrlAnswer, false);
+                                    SetHttpRequestHeader(httpAnswer);
+                                    httpAnswer.Send("");
+                                    if (httpAnswer.ResponseBody.Length > 0 && httpAnswer.ResponseBody.IndexOf(@"""Code"":") >= 0)
+                                    {
+                                        JObject joAnswer = (JObject)JsonConvert.DeserializeObject(httpAnswer.ResponseBody);
+                                        if ((string)joAnswer["Code"] == "0")
+                                        {
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                        }
+                                        else
+                                        {
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题是：error:{0},fileName:{1},stem:{2}\n", szError, szFileName, szStem));
+                                        }
+                                        break;
+                                    }
+
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                    nAnswerTimes++;
+                                }
+                            }
+                            break;
+                        case 3:
+                            {
+                                int nIndex = szFileName.IndexOf(".");
+                                string szSubFileName = szFileName.Substring(0, nIndex);
+                                string szMusic = "";
+                                string szAnswer = "";
+                                string[] arrayLyric = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
+
+                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out szMusic);
+                                if (szMusic == "")
+                                {
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
+                                    AllPlayers.RecordError(szSubFileName);
+                                }
+
+                                if (szMusic != "")
+                                {
+                                    for (int nLyric = 0; nLyric < arrayLyric.Count(); nLyric++)
+                                    {
+                                        string szTmpMusic = "";
+                                        AllPlayers.dic_Lyric_Music.TryGetValue(arrayLyric[nLyric], out szTmpMusic);
+                                        if (szTmpMusic == "")
+                                        {
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("歌词查音乐出错:{0}\n", arrayLyric[nLyric]));
+                                            AllPlayers.RecordError(arrayLyric[nLyric]);
+                                        }
+
+                                        if (szTmpMusic != "" && szMusic.Equals(szTmpMusic, StringComparison.CurrentCultureIgnoreCase))
+                                        {
+                                            szAnswer = arrayLyric[nLyric];
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (szAnswer == "")
+                                {
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("自动获取答案失败：Type2:{0},{1}\n", szError, szFileName));
+                                    szAnswer = arrayLyric[0];
+                                }
+
+                                Program.form1.richTextBoxStatus_AddString(string.Format("Type3:{0},{1}\n", szSubFileName, szAnswer));
+
+                                int nAnswerTimes = 0;
+                                while (nAnswerTimes < 3)
+                                {
+                                    DxWinHttp httpAnswer = new DxWinHttp();
+                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}", AllPlayers.strUserId, nQlist, Uri.EscapeDataString(szAnswer));
+                                    httpAnswer.Open("GET", szUrlAnswer, false);
+                                    SetHttpRequestHeader(httpAnswer);
+                                    httpAnswer.Send("");
+                                    if (httpAnswer.ResponseBody.Length > 0 && httpAnswer.ResponseBody.IndexOf(@"""Code"":") >= 0)
+                                    {
+                                        JObject joAnswer = (JObject)JsonConvert.DeserializeObject(httpAnswer.ResponseBody);
+                                        if ((string)joAnswer["Code"] == "0")
+                                        {
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                        }
+                                        else
+                                        {
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                            Program.form1.richTextBoxStatus_AddString(string.Format("答题是：error:{0},fileName:{1},stem:{2}\n", szError, szFileName, szStem));
+                                        }
+                                        break;
+                                    }
+
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                    nAnswerTimes++;
+                                }                            
+                            }
+                            break;
                     }
                 }
             }
 
-            if (bFound)
+            nTime = 0;
+            while (nTime < 3)
             {
-                System.Windows.Forms.MessageBox.Show(Program.form1, string.Format("重复{0}", signature));
-                return;
+                Program.form1.richTextBoxStatus_AddString(string.Format("一题成名第{0}次\n", nTime));
+                nTime++;
+
+                JObject joQlistResult = new JObject();
+                string szQlistResult = "";
+                int nCreateOneTime = 0;
+                while (nCreateOneTime < 3)
+                {
+                    DxWinHttp http = new DxWinHttp();
+                    string szUrl = string.Format("http://gapi.expop.com.cn/Game/CreateOne?UserID={0}", AllPlayers.strUserId);
+                    http.Open("GET", szUrl, false);
+                    SetHttpRequestHeader(http);
+                    http.Send("");
+                    if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""Option"":") >= 0)
+                    {
+                        szQlistResult = http.ResponseBody;
+                        joQlistResult = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                        Program.form1.richTextBoxStatus_AddString(string.Format("获取问题列表成功\n"));
+                        break;
+                    }
+
+                    Program.form1.richTextBoxStatus_AddString(string.Format("获取问题列表出错：{0}\n", http.ResponseBody));
+                    nCreateOneTime++;
+                }
+                if (nCreateOneTime >= 3)
+                {
+                    Program.form1.richTextBoxStatus_AddString(string.Format("获取问题列表出错，放弃\n"));
+                    continue;
+                }
+
+                int nPlayActionTimes = 0;
+                while (nPlayActionTimes < 3)
+                {
+                    DxWinHttp httpPlayAction = new DxWinHttp();
+                    string szUrlPlayAction = string.Format("http://gapi.expop.com.cn/Game/PlayAction?UserID={0}&now=0", AllPlayers.strUserId);
+                    httpPlayAction.Open("GET", szUrlPlayAction, false);
+                    SetHttpRequestHeader(httpPlayAction);
+                    httpPlayAction.Send("");
+                    if (httpPlayAction.ResponseBody.Length > 0 && httpPlayAction.ResponseBody.IndexOf(@"""Code"":") >= 0)
+                    {
+                        Program.form1.richTextBoxStatus_AddString(string.Format("第0题\n"));
+                        break;
+                    }
+                    Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpPlayAction.ResponseBody));
+                    nPlayActionTimes++;
+                }
+
+                List<string> listOption = new List<string>();
+                JArray jaOption = (JArray)joQlistResult["Option"];
+                foreach (string szValue in jaOption)
+                {
+                    listOption.Add(szValue);
+                }
+
+                string szAnswer = "";
+                JArray jaQlist = (JArray)joQlistResult["question"];
+                for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
+                {
+                    string szFileName = (string)((JObject)jaQlist[nQlist])["fileName"];
+                    int nIndex = szFileName.IndexOf(".");
+                    string szSubFileName = szFileName.Substring(0, nIndex);
+                    string szMusic = "";
+                    AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out szMusic);
+                    if (szMusic == "")
+                    {
+                        Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
+                        AllPlayers.RecordError(szSubFileName);
+
+                        szMusic = (string)((JArray)joQlistResult["Option"])[0];
+                    }
+                    else
+                    {
+                        foreach (string szValue in listOption)
+                        {
+                            if (szMusic.Equals(szValue, StringComparison.CurrentCultureIgnoreCase))
+                            {
+                                szMusic = szValue;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (nQlist == 0)
+                        szAnswer = szMusic;
+                    else
+                        szAnswer = szAnswer + "#" + szMusic;
+                }
+
+                Program.form1.richTextBoxStatus_AddString(string.Format("一题成名:{0}\n", szAnswer));
+
+                int nAnswerTimes = 0;
+                while (nAnswerTimes < 3)
+                {
+                    DxWinHttp httpAnswer = new DxWinHttp();
+                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}", AllPlayers.strUserId, Uri.EscapeDataString(szAnswer));
+                    httpAnswer.Open("GET", szUrlAnswer, false);
+                    SetHttpRequestHeader(httpAnswer);
+                    httpAnswer.Send("");
+                    if (httpAnswer.ResponseBody.Length > 0 && httpAnswer.ResponseBody.IndexOf(@"""Code"":") >= 0)
+                    {
+                        JObject joAnswer = (JObject)JsonConvert.DeserializeObject(httpAnswer.ResponseBody);
+                        if ((string)joAnswer["Code"] == "0")
+                        {
+                            Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                        }
+                        else
+                        {
+                            Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                            Program.form1.richTextBoxStatus_AddString(string.Format("答题是：{0}\n", szQlistResult));
+                        }
+                        break; break;
+                    }
+
+                    Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                    nAnswerTimes++;
+                }
             }
 
-            FileStream fs = File.Open(AllPlayers.strConfigFileName, FileMode.Append);
-            StreamWriter sw = new StreamWriter(fs);
-            if (bHasLine)
-            {
-                sw.Write(string.Format("\r\n{0}", signature));
-            }
-            else
-            {
-                sw.Write(signature);
-            }
-            sw.Flush();
-            sw.Close();
-            fs.Close();
-
-            DxWinHttp http = new DxWinHttp();
-            http.Open("POST", HttpParam.URL + AllPlayers.strUrl, true);
-            SetHttpRequestHeader(http, pmCommitGameResult.GetSign());
-            http.Send(pmCommitGameResult.GetParam());
-
-            System.Windows.Forms.MessageBox.Show(Program.form1, "消息发送完毕");
+            Program.form1.richTextBoxStatus_AddString(string.Format("答题完成\n"));
+            Program.form1.button1_Enabled();
             return;
         }
     };
 
+ 
     class AllPlayers
     {
         public static bool bSetProxy = false;
-        public static string strConfigFileName = @"";
-        public static string strAccountFileName = @"";
+        public static string strUserId = "";
+        public static Dictionary<string, string> dic_Lyric_Music = new Dictionary<string, string>();
+        public static Dictionary<string, string> dic_FileName_Music = new Dictionary<string, string>();
+        public static Dictionary<string, string> dic_QuestionFileName_Answer = new Dictionary<string, string>();
+        public static string szConfigError = "";
 
-        public static string strParam = @"";
-        public static string strUrl = @"";
-        public static string strParamSignature = @"";
+        public static bool bInit = false;
 
         public void Init()
         {
+            if (bInit)
+                return;
+
+            bInit = true;
+
+            string szConfigLyricMusic = System.Environment.CurrentDirectory + @"\" + @"config_lyric_music.csv";
+            string szConfigFileNameMusic = System.Environment.CurrentDirectory + @"\" + @"config_filename_music.csv";
+            string szConfigYesNo = System.Environment.CurrentDirectory + @"\" + @"config_yesno.csv";
+            szConfigError = System.Environment.CurrentDirectory + @"\" + @"config_error.csv";
+
+            string[] arrayText = File.ReadAllLines(szConfigYesNo);
+            for (int i = 0; i < arrayText.Length; ++i)
+            {
+                string[] arrayParam = arrayText[i].Split(new string[] { "####" }, System.StringSplitOptions.None);
+                if (arrayParam.Length >= 3)
+                {
+                    dic_QuestionFileName_Answer.Add(arrayParam[0] + arrayParam[1], arrayParam[2]);                    
+                }
+            }
+
+            arrayText = File.ReadAllLines(szConfigLyricMusic);
+            for (int i = 0; i < arrayText.Length; ++i)
+            {
+                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+                if (arrayParam.Length >= 2)
+                    dic_Lyric_Music.Add(arrayParam[0], arrayParam[1]);
+            }
+
+            arrayText = File.ReadAllLines(szConfigFileNameMusic);
+            for (int i = 0; i < arrayText.Length; ++i)
+            {
+                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+                if (arrayParam.Length >= 3)
+                    dic_FileName_Music.Add(arrayParam[1], arrayParam[2]);
+            }
+
+            Program.form1.Form1_Init();
+        }
+
+        public static void RecordError(string strError)
+        {
+            FileStream fs = File.Open(szConfigError, FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(string.Format("{0}\r\n", strError));
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+        }
+
+        public void Run()
+        {
+            if (dic_QuestionFileName_Answer.Count() == 0 || dic_FileName_Music.Count() == 0 || dic_Lyric_Music.Count() == 0)
+                return;
+
             if (Program.form1.textBoxSetProxy_GetProxy().Equals("0"))
                 bSetProxy = false;
             else
                 bSetProxy = true;
 
-            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.InitialDirectory = desktop;
-            openFileDialog.Filter = "txt File(*.txt)|*.txt";
-            openFileDialog.RestoreDirectory = true;
-            openFileDialog.FilterIndex = 1;
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                strAccountFileName = openFileDialog.FileName;
-            }
-            else
-            {
-                return;
-            }
-            strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config.csv";
-
-            string[] arrayText = File.ReadAllLines(strAccountFileName);
-            for (int i = 0; i < arrayText.Length; ++i)
-            {
-                if (arrayText[i].IndexOf("params=") == 0)
-                {
-                    strParam = arrayText[i];
-                }
-
-                if (arrayText[i].IndexOf("{\"code\":") == 0)
-                {
-                    strParamSignature = arrayText[i];
-                }
-            }
-            strUrl = @"game/commitGameResult.action";
-
-            Program.form1.Form1_Init();
-        }
-
-
-        public void Run()
-        {
-            if (strAccountFileName == "")
-                return;
-
+            strUserId = Program.form1.textBoxUserId_GetUserId();
+            
             Player player = new Player();
-            player.Run();
+            Thread thread = new Thread(player.Run);
+            thread.Start();
         }
    
     };

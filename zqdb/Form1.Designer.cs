@@ -32,9 +32,10 @@
             this.textBoxAccount = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.textBoxConfig = new System.Windows.Forms.TextBox();
-            this.textBoxScore = new System.Windows.Forms.TextBox();
+            this.textBoxUserId = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.textBoxSetProxy = new System.Windows.Forms.TextBox();
+            this.richTextBoxStatus = new System.Windows.Forms.RichTextBox();
             this.SuspendLayout();
             // 
             // buttonRun
@@ -63,7 +64,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(147, 42);
             this.label1.TabIndex = 4;
-            this.label1.Text = "Score";
+            this.label1.Text = "UserID";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // textBoxConfig
@@ -74,13 +75,13 @@
             this.textBoxConfig.Size = new System.Drawing.Size(525, 28);
             this.textBoxConfig.TabIndex = 34;
             // 
-            // textBoxScore
+            // textBoxUserId
             // 
-            this.textBoxScore.Location = new System.Drawing.Point(218, 120);
-            this.textBoxScore.Name = "textBoxScore";
-            this.textBoxScore.Size = new System.Drawing.Size(100, 28);
-            this.textBoxScore.TabIndex = 36;
-            this.textBoxScore.Text = "0";
+            this.textBoxUserId.Location = new System.Drawing.Point(218, 120);
+            this.textBoxUserId.Name = "textBoxUserId";
+            this.textBoxUserId.Size = new System.Drawing.Size(100, 28);
+            this.textBoxUserId.TabIndex = 36;
+            this.textBoxUserId.Text = "0";
             // 
             // label2
             // 
@@ -101,15 +102,24 @@
             this.textBoxSetProxy.TabIndex = 38;
             this.textBoxSetProxy.Text = "0";
             // 
+            // richTextBoxStatus
+            // 
+            this.richTextBoxStatus.Location = new System.Drawing.Point(46, 177);
+            this.richTextBoxStatus.Name = "richTextBoxStatus";
+            this.richTextBoxStatus.Size = new System.Drawing.Size(1151, 693);
+            this.richTextBoxStatus.TabIndex = 39;
+            this.richTextBoxStatus.Text = "";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(871, 223);
+            this.ClientSize = new System.Drawing.Size(1233, 904);
+            this.Controls.Add(this.richTextBoxStatus);
             this.Controls.Add(this.textBoxSetProxy);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.textBoxScore);
+            this.Controls.Add(this.textBoxUserId);
             this.Controls.Add(this.textBoxAccount);
             this.Controls.Add(this.textBoxConfig);
             this.Controls.Add(this.label1);
@@ -130,9 +140,10 @@
         private System.Windows.Forms.TextBox textBoxAccount;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox textBoxConfig;
-        private System.Windows.Forms.TextBox textBoxScore;
+        private System.Windows.Forms.TextBox textBoxUserId;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBoxSetProxy;
+        private System.Windows.Forms.RichTextBox richTextBoxStatus;
     }
 }
 
