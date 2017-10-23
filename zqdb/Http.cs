@@ -480,6 +480,12 @@ namespace zqdb
                                 }                            
                             }
                             break;
+                        default:
+                            {
+                                Program.form1.richTextBoxStatus_AddString(string.Format("遇到新类型：Type{0}\n", nType));
+                                Program.form1.richTextBoxStatus_AddString(string.Format("答题是：error:{0},fileName:{1},stem:{2}\n", szError, szFileName, szStem));
+                            }
+                            break;
                     }
                 }
             }
@@ -534,87 +540,176 @@ namespace zqdb
                     nPlayActionTimes++;
                 }
 
-                List<string> listOption = new List<string>();
-                JArray jaOption = (JArray)joQlistResult["Option"];
-                foreach (string szValue in jaOption)
+                int nFameType = (int)joQlistResult["fameType"];
+                switch (nFameType)
                 {
-                    listOption.Add(szValue);
-                }
-
-                string szAnswer = "";
-                JArray jaQlist = (JArray)joQlistResult["question"];
-                for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
-                {
-                    string szFileName = (string)((JObject)jaQlist[nQlist])["fileName"];
-                    int nIndex = szFileName.IndexOf(".");
-                    string szSubFileName = szFileName.Substring(0, nIndex);
-                    string szMusic = "";
-                    List<string> listMusic = new List<string>();
-                    AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out listMusic);
-                    if (listMusic == null || listMusic.Count() == 0)
-                    {
-                        Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
-                        AllPlayers.RecordError(szSubFileName);
-
-                        szMusic = listOption[0];
-                    }
-                    else
-                    {
-                        foreach (string szOption in listOption)
+                    case 2:
                         {
-                            foreach (string szMusic1 in listMusic)
+                            List<string> listOption = new List<string>();
+                            JArray jaOption = (JArray)joQlistResult["Option"];
+                            foreach (string szValue in jaOption)
                             {
-                                if (szMusic1.Equals(szOption, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    szMusic = szOption;
-                                    break;
-                                }
+                                listOption.Add(szValue);
                             }
 
-                            if (szMusic != "")
-                                break;
+                            string szAnswer = "";
+                            JArray jaQlist = (JArray)joQlistResult["question"];
+                            for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
+                            {
+                                string szFileName = (string)((JObject)jaQlist[nQlist])["fileName"];
+                                int nIndex = szFileName.IndexOf(".");
+                                string szSubFileName = szFileName.Substring(0, nIndex);
+                                string szMusic = "";
+                                List<string> listMusic = new List<string>();
+                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out listMusic);
+                                if (listMusic == null || listMusic.Count() == 0)
+                                {
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
+                                    AllPlayers.RecordError(szSubFileName);
+
+                                    szMusic = listOption[0];
+                                }
+                                else
+                                {
+                                    foreach (string szOption in listOption)
+                                    {
+                                        foreach (string szMusic1 in listMusic)
+                                        {
+                                            if (szMusic1.Equals(szOption, StringComparison.CurrentCultureIgnoreCase))
+                                            {
+                                                szMusic = szOption;
+                                                break;
+                                            }
+                                        }
+
+                                        if (szMusic != "")
+                                            break;
+                                    }
+                                    if (szMusic == "")
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("音乐名不在题目选项中:{0}\n", szSubFileName));
+                                        szMusic = listOption[0];
+                                    }
+
+                                }
+
+                                if (nQlist == 0)
+                                    szAnswer = szMusic;
+                                else
+                                    szAnswer = szAnswer + "#" + szMusic;
+                            }
+
+                            Program.form1.richTextBoxStatus_AddString(string.Format("一题成名:{0}\n", szAnswer));
+
+                            int nAnswerTimes = 0;
+                            while (nAnswerTimes < 3)
+                            {
+                                DxWinHttp httpAnswer = new DxWinHttp();
+                                string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}", AllPlayers.strUserId, Uri.EscapeDataString(szAnswer));
+                                httpAnswer.Open("GET", szUrlAnswer, false);
+                                SetHttpRequestHeader(httpAnswer);
+                                httpAnswer.Send("");
+                                if (httpAnswer.ResponseBody.Length > 0 && httpAnswer.ResponseBody.IndexOf(@"""Code"":") >= 0)
+                                {
+                                    JObject joAnswer = (JObject)JsonConvert.DeserializeObject(httpAnswer.ResponseBody);
+                                    if ((string)joAnswer["Code"] == "0")
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                    }
+                                    else
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("答题是：{0}\n", szQlistResult));
+                                    }
+                                    break;
+                                }
+
+                                Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                nAnswerTimes++;
+                            }                       
                         }
-                        if (szMusic == "")
+                        break;
+                    case 3:
                         {
-                            Program.form1.richTextBoxStatus_AddString(string.Format("音乐名不在题目选项中:{0}\n", szSubFileName));
-                            szMusic = szMusic = listOption[0];
+                            List<string> listOption = new List<string>();
+                            JArray jaOption = (JArray)joQlistResult["Option"];
+                            foreach (string szValue in jaOption)
+                            {
+                                listOption.Add(szValue);
+                            }
+
+                            string szAnswer = "";
+                            JArray jaQlist = (JArray)joQlistResult["question"];
+                            for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
+                            {
+                                string szFileName = (string)((JObject)jaQlist[nQlist])["fileName"];
+                                int nIndex = szFileName.IndexOf(".");
+                                string szSubFileName = szFileName.Substring(0, nIndex);
+                                string szLyric = "";
+                                AllPlayers.dic_FileName_Lyric.TryGetValue(szSubFileName, out szLyric);
+                                if (szLyric == null || szLyric.Count() == 0)
+                                {
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("文件名查歌词出错:{0}\n", szSubFileName));
+                                    AllPlayers.RecordError(szSubFileName);
+
+                                    szLyric = listOption[0];
+                                }
+                                else
+                                {
+                                    bool bFound = false;
+                                    foreach (string szOption in listOption)
+                                    {
+                                        if (szOption.Equals(szLyric, StringComparison.CurrentCultureIgnoreCase))
+                                        {
+                                            bFound = true;
+                                            szLyric = szOption;
+                                            break;
+                                        }
+                                    }
+                                    if (!bFound)
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("歌词不在题目选项中:{0},{1}\n", szSubFileName, szLyric));
+                                        szLyric = listOption[0];
+                                    }
+
+                                }
+
+                                if (nQlist == 0)
+                                    szAnswer = szLyric;
+                                else
+                                    szAnswer = szAnswer + "#" + szLyric;
+                            }
+
+                            Program.form1.richTextBoxStatus_AddString(string.Format("一题成名:{0}\n", szAnswer));
+
+                            int nAnswerTimes = 0;
+                            while (nAnswerTimes < 3)
+                            {
+                                DxWinHttp httpAnswer = new DxWinHttp();
+                                string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}", AllPlayers.strUserId, Uri.EscapeDataString(szAnswer));
+                                httpAnswer.Open("GET", szUrlAnswer, false);
+                                SetHttpRequestHeader(httpAnswer);
+                                httpAnswer.Send("");
+                                if (httpAnswer.ResponseBody.Length > 0 && httpAnswer.ResponseBody.IndexOf(@"""Code"":") >= 0)
+                                {
+                                    JObject joAnswer = (JObject)JsonConvert.DeserializeObject(httpAnswer.ResponseBody);
+                                    if ((string)joAnswer["Code"] == "0")
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                    }
+                                    else
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("答题是：{0}\n", szQlistResult));
+                                    }
+                                    break;
+                                }
+
+                                Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
+                                nAnswerTimes++;
+                            }                             
                         }
-
-                    }
-
-                    if (nQlist == 0)
-                        szAnswer = szMusic;
-                    else
-                        szAnswer = szAnswer + "#" + szMusic;
-                }
-
-                Program.form1.richTextBoxStatus_AddString(string.Format("一题成名:{0}\n", szAnswer));
-
-                int nAnswerTimes = 0;
-                while (nAnswerTimes < 3)
-                {
-                    DxWinHttp httpAnswer = new DxWinHttp();
-                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}", AllPlayers.strUserId, Uri.EscapeDataString(szAnswer));
-                    httpAnswer.Open("GET", szUrlAnswer, false);
-                    SetHttpRequestHeader(httpAnswer);
-                    httpAnswer.Send("");
-                    if (httpAnswer.ResponseBody.Length > 0 && httpAnswer.ResponseBody.IndexOf(@"""Code"":") >= 0)
-                    {
-                        JObject joAnswer = (JObject)JsonConvert.DeserializeObject(httpAnswer.ResponseBody);
-                        if ((string)joAnswer["Code"] == "0")
-                        {
-                            Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
-                        }
-                        else
-                        {
-                            Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
-                            Program.form1.richTextBoxStatus_AddString(string.Format("答题是：{0}\n", szQlistResult));
-                        }
-                        break; break;
-                    }
-
-                    Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
-                    nAnswerTimes++;
+                        break;
                 }
             }
 
@@ -632,6 +727,8 @@ namespace zqdb
         public static Dictionary<string, string> dic_Lyric_Music = new Dictionary<string, string>();
         public static Dictionary<string, List<string>> dic_FileName_Music = new Dictionary<string, List<string>>();
         public static Dictionary<string, string> dic_QuestionFileName_Answer = new Dictionary<string, string>();
+        public static Dictionary<string, string> dic_Lyric_FileName = new Dictionary<string, string>();
+        public static Dictionary<string, string> dic_FileName_Lyric = new Dictionary<string, string>();
         public static string szConfigError = "";
 
         public static bool bInit = false;
@@ -646,6 +743,7 @@ namespace zqdb
             string szConfigLyricMusic = System.Environment.CurrentDirectory + @"\" + @"config_lyric_music.csv";
             string szConfigFileNameMusic = System.Environment.CurrentDirectory + @"\" + @"config_filename_music.csv";
             string szConfigYesNo = System.Environment.CurrentDirectory + @"\" + @"config_yesno.csv";
+            string szConfigLyricFileName = System.Environment.CurrentDirectory + @"\" + @"config_lyric_filename.csv";
             szConfigError = System.Environment.CurrentDirectory + @"\" + @"config_error.csv";
 
             string[] arrayText = File.ReadAllLines(szConfigYesNo);
@@ -664,6 +762,17 @@ namespace zqdb
                 string[] arrayParam = arrayText[i].Split(new char[] { ',' });
                 if (arrayParam.Length >= 2)
                     dic_Lyric_Music.Add(arrayParam[0], arrayParam[1]);
+            }
+
+            arrayText = File.ReadAllLines(szConfigLyricFileName);
+            for (int i = 0; i < arrayText.Length; ++i)
+            {
+                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+                if (arrayParam.Length >= 2)
+                {
+                    dic_Lyric_FileName.Add(arrayParam[0], arrayParam[1]);
+                    dic_FileName_Lyric.Add(arrayParam[1], arrayParam[0]);
+                }
             }
 
             arrayText = File.ReadAllLines(szConfigFileNameMusic);
