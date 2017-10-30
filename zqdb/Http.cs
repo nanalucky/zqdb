@@ -10,6 +10,9 @@ using Newtonsoft.Json.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
+using System.Drawing.Imaging;
+using System.Drawing;
 
 namespace zqdb
 {
@@ -733,6 +736,77 @@ namespace zqdb
 
         public static bool bInit = false;
 
+        public static int index = -1;
+
+        [DllImport("OCR.dll")]
+        public static extern StringBuilder CNN_OCR(int index, byte[] FileBuffer, int imglen, int zxd);
+        [DllImport("OCR.dll")]
+        public static extern int LCNN_INIT(string path, string ps, int threads);
+
+        public static byte[] ImageToBytes(Image image)
+        {
+            ImageFormat format = image.RawFormat;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                if (format.Equals(ImageFormat.Jpeg))
+                {
+                    image.Save(ms, ImageFormat.Jpeg);
+                }
+                else if (format.Equals(ImageFormat.Png))
+                {
+                    image.Save(ms, ImageFormat.Png);
+                }
+                else if (format.Equals(ImageFormat.Bmp))
+                {
+                    image.Save(ms, ImageFormat.Bmp);
+                }
+                else if (format.Equals(ImageFormat.Gif))
+                {
+                    image.Save(ms, ImageFormat.Gif);
+                }
+                else if (format.Equals(ImageFormat.Icon))
+                {
+                    image.Save(ms, ImageFormat.Icon);
+                }
+                byte[] buffer = new byte[ms.Length];
+                //Image.Save()会改变MemoryStream的Position，需要重新Seek到Begin
+                ms.Seek(0, SeekOrigin.Begin);
+                ms.Read(buffer, 0, buffer.Length);
+                return buffer;
+            }
+        }
+
+        public static string CNN(string imgPath)
+        {
+            Image img1 = Image.FromFile(imgPath);
+            byte[] img = ImageToBytes(img1);
+            StringBuilder sb = CNN_OCR(1, img, img.Length, 0);
+            return sb.ToString();
+        }
+
+        public static string GetCodeFromOcr()
+        {
+            try
+            {
+                if (index == -1)
+                {
+                    index = LCNN_INIT(Application.StartupPath + "\\字母数字.cnn", "", 100);
+                    //MessageBox.Show("初始化失败！");
+                    //return "";
+                }
+
+                //string Result = CNN_OCR(data, data.Length, index);
+                string Result = CNN(Application.StartupPath + "\\securityCode.jpg");
+                return Result;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+        
+        
+        
         public void Init()
         {
             if (bInit)
@@ -740,6 +814,8 @@ namespace zqdb
 
             bInit = true;
 
+            GetCodeFromOcr();
+            
             string szConfigLyricMusic = System.Environment.CurrentDirectory + @"\" + @"config_lyric_music.csv";
             string szConfigFileNameMusic = System.Environment.CurrentDirectory + @"\" + @"config_filename_music.csv";
             string szConfigYesNo = System.Environment.CurrentDirectory + @"\" + @"config_yesno.csv";
