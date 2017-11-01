@@ -784,7 +784,14 @@ namespace zqdb
             return sb.ToString();
         }
 
-        public static string GetCodeFromOcr()
+        public void CNN1()
+        {
+            Thread.Sleep(0);
+            string Result = CNN(Application.StartupPath + "\\securityCode.jpg");
+            Console.WriteLine(string.Format("result {0}:{1}", Thread.CurrentThread.GetHashCode(), Result));
+        }
+
+        public string GetCodeFromOcr()
         {
             try
             {
@@ -795,6 +802,30 @@ namespace zqdb
                     //return "";
                 }
 
+                for (int i = 0; i < 30; i++)
+                {
+                    Thread thread = new Thread(CNN1);
+                    thread.Start();
+                }
+
+                Thread.Sleep(10000);
+
+                for (int i = 0; i < 30; i++)
+                {
+                    Thread thread = new Thread(CNN1);
+                    thread.Start();
+                }
+
+                Thread.Sleep(10000);
+
+                for (int i = 0; i < 30; i++)
+                {
+                    Thread thread = new Thread(CNN1);
+                    thread.Start();
+                }
+
+                Thread.Sleep(10000);
+                
                 //string Result = CNN_OCR(data, data.Length, index);
                 string Result = CNN(Application.StartupPath + "\\securityCode.jpg");
                 return Result;
@@ -815,6 +846,7 @@ namespace zqdb
             bInit = true;
 
             GetCodeFromOcr();
+            return;
             
             string szConfigLyricMusic = System.Environment.CurrentDirectory + @"\" + @"config_lyric_music.csv";
             string szConfigFileNameMusic = System.Environment.CurrentDirectory + @"\" + @"config_filename_music.csv";
