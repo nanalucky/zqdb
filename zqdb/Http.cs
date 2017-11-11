@@ -770,7 +770,7 @@ namespace zqdb
                 string[] arrayParam = arrayText[i].Split(new char[] { ',' });
                 if (arrayParam.Length >= 2)
                 {
-                    dic_Lyric_FileName.Add(arrayParam[0], arrayParam[1]);
+                    //dic_Lyric_FileName.Add(arrayParam[0], arrayParam[1]);
                     dic_FileName_Lyric.Add(arrayParam[1], arrayParam[0]);
                 }
             }
