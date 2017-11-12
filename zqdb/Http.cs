@@ -759,7 +759,7 @@ namespace zqdb
             arrayText = File.ReadAllLines(szConfigLyricMusic);
             for (int i = 0; i < arrayText.Length; ++i)
             {
-                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+                string[] arrayParam = arrayText[i].Split(new string[] { "####" }, System.StringSplitOptions.None);
                 if (arrayParam.Length >= 2)
                     dic_Lyric_Music.Add(arrayParam[0], arrayParam[1]);
             }
@@ -767,7 +767,7 @@ namespace zqdb
             arrayText = File.ReadAllLines(szConfigLyricFileName);
             for (int i = 0; i < arrayText.Length; ++i)
             {
-                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+                string[] arrayParam = arrayText[i].Split(new string[] { "####" }, System.StringSplitOptions.None);
                 if (arrayParam.Length >= 2)
                 {
                     //dic_Lyric_FileName.Add(arrayParam[0], arrayParam[1]);
@@ -778,7 +778,7 @@ namespace zqdb
             arrayText = File.ReadAllLines(szConfigFileNameMusic);
             for (int i = 0; i < arrayText.Length; ++i)
             {
-                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+                string[] arrayParam = arrayText[i].Split(new string[] { "####" }, System.StringSplitOptions.None);
                 if (arrayParam.Length >= 3)
                 {
                     List<string> listMusic = new List<string>();
