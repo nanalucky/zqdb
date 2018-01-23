@@ -787,7 +787,7 @@ namespace zqdb
         public void CNN1()
         {
             Thread.Sleep(0);
-            string Result = CNN(Application.StartupPath + "\\securityCode.jpg");
+            string Result = CNN(System.Environment.CurrentDirectory + "\\pic.bmp");
             Console.WriteLine(string.Format("result {0}:{1}", Thread.CurrentThread.GetHashCode(), Result));
         }
 
@@ -797,7 +797,7 @@ namespace zqdb
             {
                 if (index == -1)
                 {
-                    index = LCNN_INIT(Application.StartupPath + "\\字母数字.cnn", "", 100);
+                    index = LCNN_INIT(System.Environment.CurrentDirectory + "\\Newibailian.cnn", "", 100);
                     //MessageBox.Show("初始化失败！");
                     //return "";
                 }
