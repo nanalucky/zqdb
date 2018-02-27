@@ -392,6 +392,9 @@ namespace zqdb
 
                 for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
                 {
+                    string strQuestion = JsonConvert.SerializeObject((JObject)jaQlist[nQlist]);
+                    AllPlayers.RecordQuestion(strQuestion);
+
                     int nPlayActionTimes = 0;
                     while (nPlayActionTimes < 3)
                     {
@@ -439,6 +442,7 @@ namespace zqdb
                                 Program.form1.richTextBoxStatus_AddString(string.Format("Type1:{0},{1},{2}\n", szSubStem, szSubFileName, szAnswer));
 
                                 int nAnswerTimes = 0;
+                                bool bSuccess = false;
                                 while (nAnswerTimes < 3)
                                 {
                                     DxWinHttp httpAnswer = new DxWinHttp();
@@ -452,6 +456,7 @@ namespace zqdb
                                         if ((string)joAnswer["Code"] == "0")
                                         {
                                             Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                            bSuccess = true;
                                         }
                                         else 
                                         {
@@ -464,6 +469,11 @@ namespace zqdb
                                     Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
                                     nAnswerTimes++;
                                 }
+
+                                if (bSuccess)
+                                    AllPlayers.RecordQuestionRight(strQuestion);
+                                else
+                                    AllPlayers.RecordQuestionWrong(strQuestion);
                             }
                             break;
                         case 2:
@@ -508,6 +518,7 @@ namespace zqdb
                                 Program.form1.richTextBoxStatus_AddString(string.Format("Type2:{0},{1}\n", szSubFileName, szAnswer));
 
                                 int nAnswerTimes = 0;
+                                bool bSuccess = false;
                                 while (nAnswerTimes < 3)
                                 {
                                     DxWinHttp httpAnswer = new DxWinHttp();
@@ -521,6 +532,7 @@ namespace zqdb
                                         if ((string)joAnswer["Code"] == "0")
                                         {
                                             Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                            bSuccess = true;
                                         }
                                         else
                                         {
@@ -533,6 +545,11 @@ namespace zqdb
                                     Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
                                     nAnswerTimes++;
                                 }
+
+                                if (bSuccess)
+                                    AllPlayers.RecordQuestionRight(strQuestion);
+                                else
+                                    AllPlayers.RecordQuestionWrong(strQuestion);
                             }
                             break;
                         case 3:
@@ -583,6 +600,7 @@ namespace zqdb
                                 Program.form1.richTextBoxStatus_AddString(string.Format("Type3:{0},{1}\n", szSubFileName, szAnswer));
 
                                 int nAnswerTimes = 0;
+                                bool bSuccess = false;
                                 while (nAnswerTimes < 3)
                                 {
                                     DxWinHttp httpAnswer = new DxWinHttp();
@@ -596,6 +614,7 @@ namespace zqdb
                                         if ((string)joAnswer["Code"] == "0")
                                         {
                                             Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                            bSuccess = true;
                                         }
                                         else
                                         {
@@ -607,13 +626,19 @@ namespace zqdb
 
                                     Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
                                     nAnswerTimes++;
-                                }                            
+                                }
+
+                                if (bSuccess)
+                                    AllPlayers.RecordQuestionRight(strQuestion);
+                                else
+                                    AllPlayers.RecordQuestionWrong(strQuestion);
                             }
                             break;
                         default:
                             {
                                 Program.form1.richTextBoxStatus_AddString(string.Format("遇到新类型：Type{0}\n", nType));
                                 Program.form1.richTextBoxStatus_AddString(string.Format("答题是：error:{0},fileName:{1},stem:{2}\n", szError, szFileName, szStem));
+                                AllPlayers.RecordQuestionWrong(strQuestion);
                             }
                             break;
                     }
@@ -685,6 +710,9 @@ namespace zqdb
                     Program.form1.richTextBoxStatus_AddString(string.Format("获取问题列表出错，放弃\n"));
                     continue;
                 }
+
+                string strQuestion = szQlistResult;
+                AllPlayers.RecordQuestionOne(strQuestion);
 
                 JArray jaQlist = (JArray)joQlistResult["question"];
                 for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
@@ -772,6 +800,7 @@ namespace zqdb
                             Program.form1.richTextBoxStatus_AddString(string.Format("一题成名:{0}\n", szAnswer));
 
                             int nAnswerTimes = 0;
+                            bool bSuccess = false;
                             while (nAnswerTimes < 3)
                             {
                                 DxWinHttp httpAnswer = new DxWinHttp();
@@ -785,6 +814,7 @@ namespace zqdb
                                     if ((string)joAnswer["Code"] == "0")
                                     {
                                         Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                        bSuccess = true;
                                     }
                                     else
                                     {
@@ -796,7 +826,12 @@ namespace zqdb
 
                                 Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
                                 nAnswerTimes++;
-                            }                       
+                            }
+
+                            if (bSuccess)
+                                AllPlayers.RecordQuestionRightOne(strQuestion);
+                            else
+                                AllPlayers.RecordQuestionWrongOne(strQuestion);
                         }
                         break;
                     case 3:
@@ -853,6 +888,7 @@ namespace zqdb
                             Program.form1.richTextBoxStatus_AddString(string.Format("一题成名:{0}\n", szAnswer));
 
                             int nAnswerTimes = 0;
+                            bool bSuccess = false;
                             while (nAnswerTimes < 3)
                             {
                                 DxWinHttp httpAnswer = new DxWinHttp();
@@ -866,6 +902,7 @@ namespace zqdb
                                     if ((string)joAnswer["Code"] == "0")
                                     {
                                         Program.form1.richTextBoxStatus_AddString(string.Format("答题成功{0}\n", httpAnswer.ResponseBody));
+                                        bSuccess = true;
                                     }
                                     else
                                     {
@@ -877,7 +914,12 @@ namespace zqdb
 
                                 Program.form1.richTextBoxStatus_AddString(string.Format("答题出错：{0}\n", httpAnswer.ResponseBody));
                                 nAnswerTimes++;
-                            }                             
+                            }
+
+                            if (bSuccess)
+                                AllPlayers.RecordQuestionRightOne(strQuestion);
+                            else
+                                AllPlayers.RecordQuestionWrongOne(strQuestion);
                         }
                         break;
                 }
@@ -906,6 +948,12 @@ namespace zqdb
         public static string strClientType = @"";
         public static string strConfigFileName = @"";
         public static string strAccountFileName = @"";
+        public static string strQuestionFileName = @"";
+        public static string strQuestionWrongFileName = @"";
+        public static string strQuestionRightFileName = @"";
+        public static string strQuestionOneFileName = @"";
+        public static string strQuestionWrongOneFileName = @"";
+        public static string strQuestionRightOneFileName = @"";
 
         public static string strMusicPath;
         List<Player> listPlayer = new List<Player>();
@@ -932,6 +980,12 @@ namespace zqdb
             szConfigError = System.Environment.CurrentDirectory + @"\" + @"config_error.csv";
             strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config_login.txt";
             strAccountFileName = System.Environment.CurrentDirectory + @"\" + @"config_account.csv";
+            strQuestionFileName = System.Environment.CurrentDirectory + @"\" + @"out_set_all.csv";
+            strQuestionWrongFileName = System.Environment.CurrentDirectory + @"\" + @"out_set_wrong.csv";
+            strQuestionRightFileName = System.Environment.CurrentDirectory + @"\" + @"out_set_right.csv";
+            strQuestionOneFileName = System.Environment.CurrentDirectory + @"\" + @"out_one_all.csv";
+            strQuestionWrongOneFileName = System.Environment.CurrentDirectory + @"\" + @"out_one_wrong.csv";
+            strQuestionRightOneFileName = System.Environment.CurrentDirectory + @"\" + @"out_one_right.csv";
 
             string[] arrayConfig = File.ReadAllLines(strConfigFileName);
             string[] arrayText = File.ReadAllLines(strAccountFileName);
@@ -1022,6 +1076,66 @@ namespace zqdb
             FileStream fs = File.Open(szConfigError, FileMode.Append);
             StreamWriter sw = new StreamWriter(fs);
             sw.Write(string.Format("{0}\r\n", strError));
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+        }
+
+        public static void RecordQuestion(string strQuestion)
+        {
+            FileStream fs = File.Open(strQuestionFileName, FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(string.Format("{0}\r\n", strQuestion));
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+        }
+
+        public static void RecordQuestionWrong(string strQuestion)
+        {
+            FileStream fs = File.Open(strQuestionWrongFileName, FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(string.Format("{0}\r\n", strQuestion));
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+        }
+
+        public static void RecordQuestionRight(string strQuestion)
+        {
+            FileStream fs = File.Open(strQuestionRightFileName, FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(string.Format("{0}\r\n", strQuestion));
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+        }
+
+        public static void RecordQuestionOne(string strQuestion)
+        {
+            FileStream fs = File.Open(strQuestionOneFileName, FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(string.Format("{0}\r\n", strQuestion));
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+        }
+
+        public static void RecordQuestionWrongOne(string strQuestion)
+        {
+            FileStream fs = File.Open(strQuestionWrongOneFileName, FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(string.Format("{0}\r\n", strQuestion));
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+        }
+
+        public static void RecordQuestionRightOne(string strQuestion)
+        {
+            FileStream fs = File.Open(strQuestionRightOneFileName, FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(string.Format("{0}\r\n", strQuestion));
             sw.Flush();
             sw.Close();
             fs.Close();
