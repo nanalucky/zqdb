@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Forms;
+using System.Net;
 
 namespace zqdb
 {
@@ -211,7 +212,12 @@ namespace zqdb
 
     public class Player
     {
-       
+        public JObject joLoginParam;
+        public string strTelephone;
+        public int nIndex;
+        HttpParam pmLogin;
+        string strAuthory;      
+
         void SetHttpRequestHeader(DxWinHttp _http)
         {
             if(AllPlayers.bSetProxy)
@@ -220,12 +226,129 @@ namespace zqdb
             //_http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             _http.SetRequestHeader("Accept-Encoding", "identity");
             _http.SetRequestHeader("User-Agent", "Dalvik/2.1.0 (Linux; U; Android 7.1.1; vivo Xplay6 Build/NMF26F)");
-            _http.SetRequestHeader("Host", "gapi.expop.com.cn");
+            //_http.SetRequestHeader("Host", "gapi.expop.com.cn");
         }
 
+        void SetHttpRequestHeader(DxWinHttp _http, string _sign)
+        {
+            if (AllPlayers.bSetProxy)
+                _http.SetProxy(2, "127.0.0.1:8888", "0");
+
+            _http.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            //_http.SetRequestHeader("Host", "api.expop.com.cn");
+            //_http.SetRequestHeader("Connection", "Keep-Alive");
+            _http.SetRequestHeader("Accept-Encoding", "gzip");
+            _http.SetRequestHeader("User-Agent", "okhttp/3.4.1");
+            _http.SetRequestHeader("Encrypt-Sign", _sign);
+        }
+
+        bool WaitForResponse(DxWinHttp _http)
+        {
+            DateTime timeStart = DateTime.Now;
+            while (true)
+            {
+                bool succeeded = false;
+                _http.WaitForResponse(1, out succeeded);
+                if (_http.ResponseBody.Length > 0)
+                    break;
+                if ((int)((DateTime.Now - timeStart).TotalSeconds) > 30)
+                    break;
+            }
+            return true;
+        }
+
+        void DownloadMusic(string strFileName)
+        {
+            string path = AllPlayers.strMusicPath + @"\" + strFileName;
+            if (File.Exists(path))
+                return;
+
+            // 设置参数
+            string url = "http://gmp3.expop.com.cn/music/" + strFileName;
+            HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
+
+            //发送请求并获取相应回应数据
+            HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+            //直到request.GetResponse()程序才开始向目标网页发送Post请求
+            Stream responseStream = response.GetResponseStream();
+            //创建本地文件写入流
+            Stream stream = new FileStream(path, FileMode.Create);
+            byte[] bArr = new byte[1024];
+            int size = responseStream.Read(bArr, 0, (int)bArr.Length);
+            while (size > 0)
+            {
+                stream.Write(bArr, 0, size);
+                size = responseStream.Read(bArr, 0, (int)bArr.Length);
+            }
+            stream.Close();
+            responseStream.Close();
+        }
 
         public void Run()
         {
+            // login.action
+            pmLogin = new HttpParam(joLoginParam);
+            JObject joLoginReturn = new JObject();
+            int nTimes = 0;
+            while (true)
+            {
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", HttpParam.URL + @"account/login.action", true);
+                SetHttpRequestHeader(http, pmLogin.GetSign());
+                http.Send(pmLogin.GetParam());
+
+                WaitForResponse(http);
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
+                {
+                    joLoginReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joLoginReturn["code"] == @"0")
+                    {
+                        break;
+                    }
+                }
+                nTimes++;
+                if (nTimes >= 10)
+                {
+                    Program.form1.richTextBoxStatus_AddString(string.Format("{0}登录失败，放弃\n", strTelephone));
+                    return;
+                }
+            }
+            pmLogin.strUserId = (string)joLoginReturn["data"][HttpParam.USERID];
+            pmLogin.strUserToken = (string)joLoginReturn["data"][HttpParam.USERTOKEN];
+            Program.form1.richTextBoxStatus_AddString(string.Format("{0}登录成功\n", strTelephone));
+
+            //getAuthory
+            HttpParam pmGetAuthory = new HttpParam(pmLogin);
+            pmGetAuthory.joBody = new JObject();
+            JObject joGetAuthoryReturn = new JObject();
+            nTimes = 0;
+            while (true)
+            {
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", "https://api.expop.com.cn:443/v3/app/game/getAuthory.action", true);
+                SetHttpRequestHeader(http, pmGetAuthory.GetSign());
+                http.Send(pmGetAuthory.GetParam());
+
+                WaitForResponse(http);
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
+                {
+                    joGetAuthoryReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joGetAuthoryReturn["code"] == @"0")
+                    {
+                        strAuthory = (string)joGetAuthoryReturn["data"]["authory"];
+                        break;
+                    }
+                }
+
+                nTimes++;
+                if (nTimes >= 10)
+                {
+                    Program.form1.richTextBoxStatus_AddString(string.Format("{0}GetAuthory失败，放弃\n", strTelephone));
+                    return;
+                }
+            }
+
+            
             int nTime = 0;
             while(nTime < 3)
             {
@@ -237,7 +360,7 @@ namespace zqdb
                 while(nCreateSetTime < 3)
                 {
                     DxWinHttp http = new DxWinHttp();
-                    string szUrl = string.Format("http://gapi.expop.com.cn/Game/CreateSet?UserID={0}&&Diffcult=3", AllPlayers.strUserId);
+                    string szUrl = string.Format("http://gapi.expop.com.cn/Game/CreateSet?UserID={0}&&Diffcult=3&authory={1}", pmLogin.strUserId, strAuthory);
                     http.Open("GET", szUrl, false);
                     SetHttpRequestHeader(http);
                     http.Send("");
@@ -262,11 +385,18 @@ namespace zqdb
                 JArray jaQlist = (JArray)joQlistResult["Qlist"];
                 for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
                 {
+                    JObject joQuestion = (JObject)jaQlist[nQlist];
+                    string szFileName = (string)joQuestion["fileName"];
+                    DownloadMusic(szFileName);
+                }
+
+                for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
+                {
                     int nPlayActionTimes = 0;
                     while (nPlayActionTimes < 3)
                     {
                         DxWinHttp httpPlayAction = new DxWinHttp();
-                        string szUrlPlayAction = string.Format("http://gapi.expop.com.cn/Game/PlayAction?UserID={0}&now={1}", AllPlayers.strUserId, nQlist);
+                        string szUrlPlayAction = string.Format("http://gapi.expop.com.cn/Game/PlayAction?UserID={0}&now={1}&authory={2}", pmLogin.strUserId, nQlist, strAuthory);
                         httpPlayAction.Open("GET", szUrlPlayAction, false);
                         SetHttpRequestHeader(httpPlayAction);
                         httpPlayAction.Send("");
@@ -312,7 +442,7 @@ namespace zqdb
                                 while (nAnswerTimes < 3)
                                 {
                                     DxWinHttp httpAnswer = new DxWinHttp();
-                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}", AllPlayers.strUserId, nQlist, Uri.EscapeDataString(szAnswer));
+                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}&authory={3}", pmLogin.strUserId, nQlist, Uri.EscapeDataString(szAnswer), strAuthory);
                                     httpAnswer.Open("GET", szUrlAnswer, false);
                                     SetHttpRequestHeader(httpAnswer);
                                     httpAnswer.Send("");
@@ -381,7 +511,7 @@ namespace zqdb
                                 while (nAnswerTimes < 3)
                                 {
                                     DxWinHttp httpAnswer = new DxWinHttp();
-                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}", AllPlayers.strUserId, nQlist, Uri.EscapeDataString(szAnswer));
+                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}&authory={3}", pmLogin.strUserId, nQlist, Uri.EscapeDataString(szAnswer), strAuthory);
                                     httpAnswer.Open("GET", szUrlAnswer, false);
                                     SetHttpRequestHeader(httpAnswer);
                                     httpAnswer.Send("");
@@ -456,7 +586,7 @@ namespace zqdb
                                 while (nAnswerTimes < 3)
                                 {
                                     DxWinHttp httpAnswer = new DxWinHttp();
-                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}", AllPlayers.strUserId, nQlist, Uri.EscapeDataString(szAnswer));
+                                    string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/Answer?UserID={0}&now={1}&AnswerString={2}&authory={3}", pmLogin.strUserId, nQlist, Uri.EscapeDataString(szAnswer), strAuthory);
                                     httpAnswer.Open("GET", szUrlAnswer, false);
                                     SetHttpRequestHeader(httpAnswer);
                                     httpAnswer.Send("");
@@ -490,6 +620,39 @@ namespace zqdb
                 }
             }
 
+
+            //getAuthory
+            pmGetAuthory = new HttpParam(pmLogin);
+            pmGetAuthory.joBody = new JObject();
+            joGetAuthoryReturn = new JObject();
+            nTimes = 0;
+            while (true)
+            {
+                DxWinHttp http = new DxWinHttp();
+                http.Open("POST", "https://api.expop.com.cn:443/v3/app/game/getAuthory.action", true);
+                SetHttpRequestHeader(http, pmGetAuthory.GetSign());
+                http.Send(pmGetAuthory.GetParam());
+
+                WaitForResponse(http);
+                if (http.ResponseBody.Length > 0 && http.ResponseBody.IndexOf(@"""code"":") >= 0)
+                {
+                    joGetAuthoryReturn = (JObject)JsonConvert.DeserializeObject(http.ResponseBody);
+                    if ((string)joGetAuthoryReturn["code"] == @"0")
+                    {
+                        strAuthory = (string)joGetAuthoryReturn["data"]["authory"];
+                        break;
+                    }
+                }
+
+                nTimes++;
+                if (nTimes >= 10)
+                {
+                    Program.form1.richTextBoxStatus_AddString(string.Format("{0}GetAuthory失败，放弃\n", strTelephone));
+                    return;
+                }
+            }
+            
+
             nTime = 0;
             while (nTime < 3)
             {
@@ -502,7 +665,7 @@ namespace zqdb
                 while (nCreateOneTime < 3)
                 {
                     DxWinHttp http = new DxWinHttp();
-                    string szUrl = string.Format("http://gapi.expop.com.cn/Game/CreateOne?UserID={0}", AllPlayers.strUserId);
+                    string szUrl = string.Format("http://gapi.expop.com.cn/Game/CreateOne?UserID={0}&authory={1}", pmLogin.strUserId, strAuthory);
                     http.Open("GET", szUrl, false);
                     SetHttpRequestHeader(http);
                     http.Send("");
@@ -523,11 +686,18 @@ namespace zqdb
                     continue;
                 }
 
+                JArray jaQlist = (JArray)joQlistResult["question"];
+                for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
+                {
+                    string szFileName = (string)((JObject)jaQlist[nQlist])["fileName"];
+                    DownloadMusic(szFileName);
+                }
+
                 int nPlayActionTimes = 0;
                 while (nPlayActionTimes < 3)
                 {
                     DxWinHttp httpPlayAction = new DxWinHttp();
-                    string szUrlPlayAction = string.Format("http://gapi.expop.com.cn/Game/PlayAction?UserID={0}&now=0", AllPlayers.strUserId);
+                    string szUrlPlayAction = string.Format("http://gapi.expop.com.cn/Game/PlayAction?UserID={0}&now=0&authory={1}", pmLogin.strUserId, strAuthory);
                     httpPlayAction.Open("GET", szUrlPlayAction, false);
                     SetHttpRequestHeader(httpPlayAction);
                     httpPlayAction.Send("");
@@ -553,7 +723,7 @@ namespace zqdb
                             }
 
                             string szAnswer = "";
-                            JArray jaQlist = (JArray)joQlistResult["question"];
+                            jaQlist = (JArray)joQlistResult["question"];
                             for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
                             {
                                 string szFileName = (string)((JObject)jaQlist[nQlist])["fileName"];
@@ -605,7 +775,7 @@ namespace zqdb
                             while (nAnswerTimes < 3)
                             {
                                 DxWinHttp httpAnswer = new DxWinHttp();
-                                string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}", AllPlayers.strUserId, Uri.EscapeDataString(szAnswer));
+                                string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}&authory={2}", pmLogin.strUserId, Uri.EscapeDataString(szAnswer), strAuthory);
                                 httpAnswer.Open("GET", szUrlAnswer, false);
                                 SetHttpRequestHeader(httpAnswer);
                                 httpAnswer.Send("");
@@ -639,7 +809,7 @@ namespace zqdb
                             }
 
                             string szAnswer = "";
-                            JArray jaQlist = (JArray)joQlistResult["question"];
+                            jaQlist = (JArray)joQlistResult["question"];
                             for (int nQlist = 0; nQlist < jaQlist.Count(); ++nQlist)
                             {
                                 string szFileName = (string)((JObject)jaQlist[nQlist])["fileName"];
@@ -686,7 +856,7 @@ namespace zqdb
                             while (nAnswerTimes < 3)
                             {
                                 DxWinHttp httpAnswer = new DxWinHttp();
-                                string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}", AllPlayers.strUserId, Uri.EscapeDataString(szAnswer));
+                                string szUrlAnswer = string.Format("http://gapi.expop.com.cn/Game/AnswerOne?UserID={0}&now=0&AnswerString={1}&authory={2}", pmLogin.strUserId, Uri.EscapeDataString(szAnswer), strAuthory);
                                 httpAnswer.Open("GET", szUrlAnswer, false);
                                 SetHttpRequestHeader(httpAnswer);
                                 httpAnswer.Send("");
@@ -723,13 +893,22 @@ namespace zqdb
     class AllPlayers
     {
         public static bool bSetProxy = false;
-        public static string strUserId = "";
+        //public static string strUserId = "";
         public static Dictionary<string, string> dic_Lyric_Music = new Dictionary<string, string>();
         public static Dictionary<string, List<string>> dic_FileName_Music = new Dictionary<string, List<string>>();
         public static Dictionary<string, string> dic_QuestionFileName_Answer = new Dictionary<string, string>();
         public static Dictionary<string, string> dic_Lyric_FileName = new Dictionary<string, string>();
         public static Dictionary<string, string> dic_FileName_Lyric = new Dictionary<string, string>();
         public static string szConfigError = "";
+
+        public static string strApiVer = @"";
+        public static string strClientVer = @"";
+        public static string strClientType = @"";
+        public static string strConfigFileName = @"";
+        public static string strAccountFileName = @"";
+
+        public static string strMusicPath;
+        List<Player> listPlayer = new List<Player>();
 
         public static bool bInit = false;
 
@@ -740,13 +919,60 @@ namespace zqdb
 
             bInit = true;
 
+            strMusicPath = System.Environment.CurrentDirectory + @"\music";
+            if (!Directory.Exists(strMusicPath))
+            {
+                Directory.CreateDirectory(strMusicPath);
+            }
+
             string szConfigLyricMusic = System.Environment.CurrentDirectory + @"\" + @"config_lyric_music.csv";
             string szConfigFileNameMusic = System.Environment.CurrentDirectory + @"\" + @"config_filename_music.csv";
             string szConfigYesNo = System.Environment.CurrentDirectory + @"\" + @"config_yesno.csv";
             string szConfigLyricFileName = System.Environment.CurrentDirectory + @"\" + @"config_lyric_filename.csv";
             szConfigError = System.Environment.CurrentDirectory + @"\" + @"config_error.csv";
+            strConfigFileName = System.Environment.CurrentDirectory + @"\" + @"config_login.txt";
+            strAccountFileName = System.Environment.CurrentDirectory + @"\" + @"config_account.csv";
 
-            string[] arrayText = File.ReadAllLines(szConfigYesNo);
+            string[] arrayConfig = File.ReadAllLines(strConfigFileName);
+            string[] arrayText = File.ReadAllLines(strAccountFileName);
+
+            JObject joInfo = (JObject)JsonConvert.DeserializeObject(arrayConfig[0]);
+            strApiVer = (string)joInfo[HttpParam.APIVER];
+            strClientVer = (string)joInfo[HttpParam.CLIENTVER];
+            strClientType = (string)joInfo[HttpParam.CLIENTTYPE];
+
+
+            int nInit = 1;
+            for (int i = nInit; i < arrayText.Length; ++i)
+            {
+                string[] arrayParam = arrayText[i].Split(new char[] { ',' });
+
+                JObject joParam = new JObject(
+                    new JProperty(HttpParam.DEVICETOKEN, arrayParam[1]),
+                    new JProperty(HttpParam.CLIENTTYPE, AllPlayers.strClientType),
+                    new JProperty(HttpParam.USERID, @""),
+                    new JProperty(HttpParam.CLIENTTOKEN, arrayParam[2]),
+                    new JProperty(HttpParam.TIMESTAMP, @""),
+                    new JProperty(HttpParam.USERTOKEN, @""),
+                    new JProperty(HttpParam.NONCESTR, HttpParam.UserMd5(arrayParam[2]).ToLower()),
+                    new JProperty(HttpParam.APIVER, AllPlayers.strApiVer),
+                    new JProperty(HttpParam.CLIENTVER, AllPlayers.strClientVer),
+                    new JProperty(HttpParam.SIGN, @""),
+                    new JProperty(HttpParam.BODY, new JObject(
+                            new JProperty(HttpParam.PHONE, arrayParam[3]),
+                            new JProperty(HttpParam.PASSWORD, arrayParam[4])
+                        ))
+                    );
+
+                Player player = new Player();
+                player.nIndex = i - nInit;
+                player.joLoginParam = joParam;
+                player.strTelephone = (string)joParam[HttpParam.BODY]["phone"];
+                //player.thread.Start();
+                listPlayer.Add(player);
+            }
+
+            arrayText = File.ReadAllLines(szConfigYesNo);
             for (int i = 0; i < arrayText.Length; ++i)
             {
                 string[] arrayParam = arrayText[i].Split(new string[] { "####" }, System.StringSplitOptions.None);
@@ -810,12 +1036,17 @@ namespace zqdb
                 bSetProxy = false;
             else
                 bSetProxy = true;
-
-            strUserId = Program.form1.textBoxUserId_GetUserId();
-            
-            Player player = new Player();
-            Thread thread = new Thread(player.Run);
+                        
+            Thread thread = new Thread(RunPlayerOneByOne);
             thread.Start();
+        }
+
+        public void RunPlayerOneByOne()
+        {
+            foreach (Player player in listPlayer)
+            {
+                player.Run();
+            }
         }
    
     };

@@ -40,11 +40,6 @@ namespace zqdb
         {
         }
 
-        public string textBoxUserId_GetUserId()
-        {
-            return textBoxUserId.Text;
-        }
-
         public string textBoxSetProxy_GetProxy()
         {
             return textBoxSetProxy.Text;

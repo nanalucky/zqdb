@@ -30,9 +30,7 @@
         {
             this.buttonRun = new System.Windows.Forms.Button();
             this.textBoxAccount = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.textBoxConfig = new System.Windows.Forms.TextBox();
-            this.textBoxUserId = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.textBoxSetProxy = new System.Windows.Forms.TextBox();
             this.richTextBoxStatus = new System.Windows.Forms.RichTextBox();
@@ -56,17 +54,6 @@
             this.textBoxAccount.Size = new System.Drawing.Size(525, 28);
             this.textBoxAccount.TabIndex = 35;
             // 
-            // label1
-            // 
-            this.label1.BackColor = System.Drawing.SystemColors.Control;
-            this.label1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label1.Location = new System.Drawing.Point(46, 111);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(147, 42);
-            this.label1.TabIndex = 4;
-            this.label1.Text = "UserID";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
             // textBoxConfig
             // 
             this.textBoxConfig.Enabled = false;
@@ -75,19 +62,11 @@
             this.textBoxConfig.Size = new System.Drawing.Size(525, 28);
             this.textBoxConfig.TabIndex = 34;
             // 
-            // textBoxUserId
-            // 
-            this.textBoxUserId.Location = new System.Drawing.Point(218, 120);
-            this.textBoxUserId.Name = "textBoxUserId";
-            this.textBoxUserId.Size = new System.Drawing.Size(100, 28);
-            this.textBoxUserId.TabIndex = 36;
-            this.textBoxUserId.Text = "0";
-            // 
             // label2
             // 
             this.label2.BackColor = System.Drawing.SystemColors.Control;
             this.label2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.label2.Location = new System.Drawing.Point(386, 111);
+            this.label2.Location = new System.Drawing.Point(46, 115);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(147, 42);
             this.label2.TabIndex = 37;
@@ -96,7 +75,7 @@
             // 
             // textBoxSetProxy
             // 
-            this.textBoxSetProxy.Location = new System.Drawing.Point(554, 120);
+            this.textBoxSetProxy.Location = new System.Drawing.Point(214, 124);
             this.textBoxSetProxy.Name = "textBoxSetProxy";
             this.textBoxSetProxy.Size = new System.Drawing.Size(100, 28);
             this.textBoxSetProxy.TabIndex = 38;
@@ -119,10 +98,8 @@
             this.Controls.Add(this.richTextBoxStatus);
             this.Controls.Add(this.textBoxSetProxy);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.textBoxUserId);
             this.Controls.Add(this.textBoxAccount);
             this.Controls.Add(this.textBoxConfig);
-            this.Controls.Add(this.label1);
             this.Controls.Add(this.buttonRun);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "Form1";
@@ -138,9 +115,7 @@
 
         private System.Windows.Forms.Button buttonRun;
         private System.Windows.Forms.TextBox textBoxAccount;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox textBoxConfig;
-        private System.Windows.Forms.TextBox textBoxUserId;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBoxSetProxy;
         private System.Windows.Forms.RichTextBox richTextBoxStatus;
