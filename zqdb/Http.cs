@@ -33,7 +33,7 @@ namespace zqdb
         public const string PASSWORD = @"password";
         public const string NONCESTR = @"nonceStr";
 
-        string strKey = @"ae973b8d-64f3-42e4-8f3f-b93d76f5924f";
+        string strKey = @"d336770d-2bff-243b-e5f0-9a9593a6b935";
         string strAnd = @"&";
         string strEqual = @"=";
 
