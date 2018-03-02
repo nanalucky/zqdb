@@ -556,44 +556,53 @@ namespace zqdb
                             {
                                 int nIndex = szFileName.IndexOf(".");
                                 string szSubFileName = szFileName.Substring(0, nIndex);
-                                string szAnswer = "";
                                 string[] arrayLyric = szError.Split(new string[] { "^^^" }, System.StringSplitOptions.None);
 
-                                List<string> listMusic = new List<string>();
-                                AllPlayers.dic_FileName_Music.TryGetValue(szSubFileName, out listMusic);
-                                if (listMusic == null || listMusic.Count() == 0)
+                                string szAnswer = "";
+                                AllPlayers.dic_FileName_Lyric.TryGetValue(szSubFileName, out szAnswer);
+                                if (szAnswer == null || szAnswer.Count() == 0)
                                 {
-                                    Program.form1.richTextBoxStatus_AddString(string.Format("文件名查音乐出错:{0}\n", szSubFileName));
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("文件名查歌词出错:{0}\n", szSubFileName));
                                     AllPlayers.RecordError(szSubFileName);
+
+                                    szAnswer = arrayLyric[0];
                                 }
                                 else
                                 {
-                                    for (int nLyric = 0; nLyric < arrayLyric.Count(); nLyric++)
+                                    bool bFound = false;
+                                    foreach (string szOption in arrayLyric)
                                     {
-                                        string szTmpMusic = "";
-                                        AllPlayers.dic_Lyric_Music.TryGetValue(arrayLyric[nLyric], out szTmpMusic);
-                                        if (szTmpMusic == null || szTmpMusic == "")
+                                        if (szOption.Equals(szAnswer, StringComparison.CurrentCultureIgnoreCase))
                                         {
-                                            Program.form1.richTextBoxStatus_AddString(string.Format("歌词查音乐出错:{0}\n", arrayLyric[nLyric]));
-                                            AllPlayers.RecordError(arrayLyric[nLyric]);
+                                            bFound = true;
+                                            szAnswer = szOption;
+                                            break;
                                         }
-                                        else
+
+                                        if (!bFound && szOption.IndexOf(szAnswer, StringComparison.CurrentCultureIgnoreCase) > 0)
                                         {
-                                            foreach (string szMusic in listMusic)
-                                            {
-                                                if (szTmpMusic.Equals(szMusic, StringComparison.CurrentCultureIgnoreCase))
-                                                {
-                                                    szAnswer = arrayLyric[nLyric];
-                                                    break;
-                                                }
-                                            }
+                                            bFound = true;
+                                            szAnswer = szOption;
+                                            break;
+                                        }
+
+                                        if (!bFound && szAnswer.IndexOf(szOption, StringComparison.CurrentCultureIgnoreCase) > 0)
+                                        {
+                                            bFound = true;
+                                            szAnswer = szOption;
+                                            break;
                                         }
                                     }
+                                    if (!bFound)
+                                    {
+                                        Program.form1.richTextBoxStatus_AddString(string.Format("歌词不在题目选项中:{0},{1}\n", szSubFileName, szAnswer));
+                                        szAnswer = arrayLyric[0];
+                                    }
                                 }
-
+                                    
                                 if (szAnswer == "")
                                 {
-                                    Program.form1.richTextBoxStatus_AddString(string.Format("自动获取答案失败：Type2:{0},{1}\n", szError, szFileName));
+                                    Program.form1.richTextBoxStatus_AddString(string.Format("自动获取答案失败：Type3:{0},{1}\n", szError, szFileName));
                                     szAnswer = arrayLyric[0];
                                 }
 
@@ -870,6 +879,20 @@ namespace zqdb
                                             szLyric = szOption;
                                             break;
                                         }
+
+                                        if (!bFound && szOption.IndexOf(szLyric, StringComparison.CurrentCultureIgnoreCase) > 0)
+                                        {
+                                            bFound = true;
+                                            szLyric = szOption;
+                                            break;
+                                        }
+
+                                        if (!bFound && szLyric.IndexOf(szOption, StringComparison.CurrentCultureIgnoreCase) > 0)
+                                        {
+                                            bFound = true;
+                                            szLyric = szOption;
+                                            break;
+                                        }
                                     }
                                     if (!bFound)
                                     {
@@ -936,7 +959,6 @@ namespace zqdb
     {
         public static bool bSetProxy = false;
         //public static string strUserId = "";
-        public static Dictionary<string, string> dic_Lyric_Music = new Dictionary<string, string>();
         public static Dictionary<string, List<string>> dic_FileName_Music = new Dictionary<string, List<string>>();
         public static Dictionary<string, string> dic_QuestionFileName_Answer = new Dictionary<string, string>();
         public static Dictionary<string, string> dic_Lyric_FileName = new Dictionary<string, string>();
@@ -1034,14 +1056,6 @@ namespace zqdb
                 {
                     dic_QuestionFileName_Answer.Add(arrayParam[0] + arrayParam[1], arrayParam[2]);                    
                 }
-            }
-
-            arrayText = File.ReadAllLines(szConfigLyricMusic);
-            for (int i = 0; i < arrayText.Length; ++i)
-            {
-                string[] arrayParam = arrayText[i].Split(new string[] { "####" }, System.StringSplitOptions.None);
-                if (arrayParam.Length >= 2)
-                    dic_Lyric_Music.Add(arrayParam[0], arrayParam[1]);
             }
 
             arrayText = File.ReadAllLines(szConfigLyricFileName);
@@ -1143,7 +1157,7 @@ namespace zqdb
 
         public void Run()
         {
-            if (dic_QuestionFileName_Answer.Count() == 0 || dic_FileName_Music.Count() == 0 || dic_Lyric_Music.Count() == 0)
+            if (dic_QuestionFileName_Answer.Count() == 0 || dic_FileName_Music.Count() == 0)
                 return;
 
             if (Program.form1.textBoxSetProxy_GetProxy().Equals("0"))
