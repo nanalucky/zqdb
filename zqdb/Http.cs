@@ -471,11 +471,9 @@ namespace zqdb
             List<DxWinHttp> listHttp = new List<DxWinHttp>(); 
             DateTime timeStart = DateTime.Now;
             bool bValid = false;
-            int nStart = 0;
             if (info.listGoodsId.Count > 0)
             {
-                nStart = nIndex % info.listGoodsId.Count;
-                pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[(nIndex + nStart) % info.listGoodsId.Count]);
+                pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[nIndex % info.listGoodsId.Count]);
                 bValid = true;
             }
            
@@ -493,14 +491,14 @@ namespace zqdb
                 Thread.Sleep(1);
                 if (dc_ConcertId_Finished[info.nConcertId])
                 {
-                    pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, dc_ConcertId_dcPriceGoodId[info.nConcertId][info.arrayPrices[(nIndex + nStart) % info.arrayPrices.Length]]);
+                    pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, dc_ConcertId_dcPriceGoodId[info.nConcertId][info.arrayPrices[nIndex % info.arrayPrices.Length]]);
                     bValid = true;
                 }
                 else
                 {
                     if (info.listGoodsId.Count > 0)
                     {
-                        pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[(nIndex + nStart) % info.listGoodsId.Count]);
+                        pmSectionOrder.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[nIndex % info.listGoodsId.Count]);
                         bValid = true;
                     }
 
