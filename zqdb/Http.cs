@@ -404,7 +404,7 @@ namespace zqdb
             bool bValid = false;
             if (info.listGoodsId.Count > 0)
             {
-                pmOrderInfo.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[(new Random()).Next(info.listGoodsId.Count)]);
+                pmOrderInfo.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[nIndex % info.listGoodsId.Count]);
                 bValid = true;                
             }
             while (true)
@@ -414,14 +414,13 @@ namespace zqdb
                     timeLast = DateTime.Now;
                     if (dc_ConcertId_Finished[info.nConcertId])
                     {
-                        pmOrderInfo.joBody["goodsIds"] = string.Format(info.strGoodsIds, dc_ConcertId_dcPriceGoodId[info.nConcertId][info.arrayPrices[(new Random()).Next(info.arrayPrices.Length)]]);
                         bValid = true;
                     }
                     else 
                     {
                         if (info.listGoodsId.Count > 0)
                         {
-                            pmOrderInfo.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[(new Random()).Next(info.listGoodsId.Count)]);
+                            pmOrderInfo.joBody["goodsIds"] = string.Format(info.strGoodsIds, info.listGoodsId[nIndex % info.listGoodsId.Count]);
                             bValid = true;
                         }
                     }
